@@ -70,7 +70,7 @@ Add this to your `google` provider config:
 ```
 
 ### Session errors
-Type `continue` to trigger auto-recovery, or use `/undo` to rollback.
+Type `continue` to trigger auto-recovery, or use `/undo` to roll back.
 
 ### Configuration Key Typo
 
