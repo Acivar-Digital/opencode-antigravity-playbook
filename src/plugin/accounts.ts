@@ -146,6 +146,8 @@ export interface ManagedAccount {
   fingerprint?: import("./fingerprint").Fingerprint;
   /** History of previous fingerprints for this account */
   fingerprintHistory?: FingerprintVersion[];
+  /** Google user ID (from OAuth userinfo) for x-chrome-id-consistency-request */
+  syncAccountId?: string;
   /** Cached quota data from last checkAccountsQuota() call */
   cachedQuota?: Partial<Record<QuotaGroup, QuotaGroupSummary>>;
   cachedQuotaUpdatedAt?: number;
@@ -359,8 +361,9 @@ export class AccountManager {
             coolingDownUntil: acc.coolingDownUntil,
             cooldownReason: acc.cooldownReason,
             touchedForQuota: {},
-            fingerprint: acc.fingerprint ?? generateFingerprint(),
+            fingerprint: acc.fingerprint ?? generateFingerprint(acc.syncAccountId),
             fingerprintHistory: acc.fingerprintHistory ?? [],
+            syncAccountId: acc.syncAccountId,
             cachedQuota: acc.cachedQuota as Partial<Record<QuotaGroup, QuotaGroupSummary>> | undefined,
             cachedQuotaUpdatedAt: acc.cachedQuotaUpdatedAt,
             verificationRequired: acc.verificationRequired,
@@ -993,6 +996,7 @@ export class AccountManager {
         cooldownReason: a.cooldownReason,
         fingerprint: a.fingerprint,
         fingerprintHistory: a.fingerprintHistory?.length ? a.fingerprintHistory : undefined,
+        syncAccountId: a.syncAccountId,
         cachedQuota: a.cachedQuota && Object.keys(a.cachedQuota).length > 0 ? a.cachedQuota : undefined,
         cachedQuotaUpdatedAt: a.cachedQuotaUpdatedAt,
         verificationRequired: a.verificationRequired,
@@ -1079,7 +1083,7 @@ export class AccountManager {
     }
 
     // Generate and assign new fingerprint
-    account.fingerprint = generateFingerprint();
+    account.fingerprint = generateFingerprint(account.syncAccountId);
     this.requestSaveToDisk();
     
     return account.fingerprint;

@@ -11,22 +11,12 @@
 import * as crypto from "node:crypto";
 import * as os from "node:os";
 import { getAntigravityVersion } from "../constants";
-
-const OS_VERSIONS: Record<string, string[]> = {
-  darwin: ["10.15.7", "11.6.8", "12.6.3", "13.5.2", "14.2.1", "14.5"],
-  win32: ["10.0.19041", "10.0.19042", "10.0.19043", "10.0.22000", "10.0.22621", "10.0.22631"],
-  linux: ["5.15.0", "5.19.0", "6.1.0", "6.2.0", "6.5.0", "6.6.0"],
-};
+import { ANTIGRAVITY_CLIENT_ID } from "../constants";
 
 const ARCHITECTURES = ["x64", "arm64"];
 
 const IDE_TYPES = [
   "ANTIGRAVITY",
-] as const;
-
-const PLATFORMS = [
-  "WINDOWS",
-  "MACOS",
 ] as const;
 
 const SDK_CLIENTS = [
@@ -56,6 +46,8 @@ export interface Fingerprint {
   osPlatform?: string;
   osArch?: string;
   osBitness?: string;
+  osVersion?: string;
+  syncAccountId?: string;
 }
 
 /**
@@ -76,6 +68,7 @@ export interface FingerprintHeaders {
   "sec-ch-ua"?: string;
   "sec-ch-ua-mobile"?: string;
   "sec-ch-ua-platform"?: string;
+  "sec-ch-ua-platform-version"?: string;
   "sec-ch-ua-arch"?: string;
   "sec-ch-ua-bitness"?: string;
   "sec-ch-ua-full-version"?: string;
@@ -119,13 +112,14 @@ function generateSessionToken(): string {
  * Generate a randomized device fingerprint.
  * Each fingerprint represents a unique "device" identity.
  */
-export function generateFingerprint(): Fingerprint {
+export function generateFingerprint(syncAccountId?: string): Fingerprint {
   const platform = randomFrom(PLATFORM_CHOICES);
   const arch = randomFrom(ARCHITECTURES);
 
   let userAgent = "";
   let chromePlatform = "Linux";
   let chromeArch = "x86";
+  let osVersion = "";
   const bitness = "64";
 
   const chromeFullVersion = "149.0.7827.53";
@@ -135,14 +129,17 @@ export function generateFingerprint(): Fingerprint {
     userAgent = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
     chromePlatform = "Windows";
     chromeArch = arch === "arm64" ? "arm" : "x86";
+    osVersion = "10.0";
   } else if (platform === "darwin") {
     userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
     chromePlatform = "macOS";
     chromeArch = arch === "arm64" ? "arm" : "x86";
+    osVersion = "14.5.0";
   } else {
     userAgent = `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
     chromePlatform = "Linux";
-    chromeArch = "x86";
+    chromeArch = arch === "arm64" ? "arm" : "x86";
+    osVersion = "";
   }
 
   return {
@@ -161,6 +158,8 @@ export function generateFingerprint(): Fingerprint {
     osPlatform: chromePlatform,
     osArch: chromeArch,
     osBitness: bitness,
+    osVersion,
+    syncAccountId,
   };
 }
 
@@ -168,13 +167,14 @@ export function generateFingerprint(): Fingerprint {
  * Collect fingerprint based on actual current system.
  * Uses real OS info instead of randomized values.
  */
-export function collectCurrentFingerprint(): Fingerprint {
+export function collectCurrentFingerprint(syncAccountId?: string): Fingerprint {
   const platform = os.platform();
   const arch = os.arch();
 
   let userAgent = "";
   let chromePlatform = "Linux";
   let chromeArch = "x86";
+  let osVersion = "";
   const bitness = "64";
 
   const chromeFullVersion = "149.0.7827.53";
@@ -184,14 +184,17 @@ export function collectCurrentFingerprint(): Fingerprint {
     userAgent = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
     chromePlatform = "Windows";
     chromeArch = arch === "arm64" ? "arm" : "x86";
+    osVersion = "10.0";
   } else if (platform === "darwin") {
     userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
     chromePlatform = "macOS";
     chromeArch = arch === "arm64" ? "arm" : "x86";
+    osVersion = "14.5.0";
   } else {
     userAgent = `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
     chromePlatform = "Linux";
-    chromeArch = "x86";
+    chromeArch = arch === "arm64" ? "arm" : "x86";
+    osVersion = "";
   }
 
   return {
@@ -210,6 +213,8 @@ export function collectCurrentFingerprint(): Fingerprint {
     osPlatform: chromePlatform,
     osArch: chromeArch,
     osBitness: bitness,
+    osVersion,
+    syncAccountId,
   };
 }
 
@@ -245,13 +250,16 @@ export function buildFingerprintHeaders(fingerprint: Fingerprint | null): Partia
   const chromeVersion = fingerprint.chromeVersion || "149";
   const chromeFullVersion = fingerprint.chromeFullVersion || "149.0.7827.53";
   const bitness = fingerprint.osBitness || "64";
+  const osVersion = fingerprint.osVersion ?? "";
   const deviceId = fingerprint.deviceId;
+  const syncAccountId = fingerprint.syncAccountId || "";
 
   return {
     "User-Agent": fingerprint.userAgent,
     "sec-ch-ua": `"Google Chrome";v="${chromeVersion}", "Chromium";v="${chromeVersion}", "Not)A;Brand";v="24"`,
     "sec-ch-ua-mobile": "?0",
     "sec-ch-ua-platform": `"${chromePlatform}"`,
+    "sec-ch-ua-platform-version": `"${osVersion}"`,
     "sec-ch-ua-arch": `"${chromeArch}"`,
     "sec-ch-ua-bitness": `"${bitness}"`,
     "sec-ch-ua-full-version": `"${chromeFullVersion}"`,
@@ -264,7 +272,7 @@ export function buildFingerprintHeaders(fingerprint: Fingerprint | null): Partia
     "x-browser-year": "2026",
     "x-browser-copyright": "Copyright 2026 Google LLC. All Rights Reserved.",
     "x-browser-validation": "6oL9V4vp1rUBqdZ3fRIxeb13+WE=",
-    "x-chrome-id-consistency-request": `version=1,client_id=77185425430.apps.googleusercontent.com,device_id=${deviceId},sync_account_id=114222513075580195089,signin_mode=all_accounts,signout_mode=show_confirmation`,
+    "x-chrome-id-consistency-request": `version=1,client_id=${ANTIGRAVITY_CLIENT_ID},device_id=${deviceId},sync_account_id=${syncAccountId},signin_mode=all_accounts,signout_mode=show_confirmation`,
     "x-goog-update-appid": "hdokiejnpimakedhajhdlcegeplioahd,nmmhkkegccagdldgiimedpiccmgmieda",
     "x-goog-update-interactivity": "bg",
     "x-goog-update-updater": `chrome-${chromeFullVersion}`,

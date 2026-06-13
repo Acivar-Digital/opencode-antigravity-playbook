@@ -20,7 +20,6 @@ const __dirname = path.dirname(__filename);
 const CERTS_DIR = path.join(__dirname, "certs");
 const CA_KEY = path.join(CERTS_DIR, "rootCA.key");
 const CA_PEM = path.join(CERTS_DIR, "rootCA.pem");
-const HOST_KEY = path.join(CERTS_DIR, "host.key");
 const LOG_FILE = path.join(__dirname, "capture.jsonl");
 
 // Setup certs directory
@@ -28,20 +27,17 @@ if (!fs.existsSync(CERTS_DIR)) {
   fs.mkdirSync(CERTS_DIR, { recursive: true });
 }
 
-// Generate root CA and common host key if missing
+// Generate root CA if missing
 function ensureRootCA() {
-  if (fs.existsSync(CA_KEY) && fs.existsSync(CA_PEM) && fs.existsSync(HOST_KEY)) {
+  if (fs.existsSync(CA_KEY) && fs.existsSync(CA_PEM)) {
     return;
   }
   console.log("Generating self-signed Root CA for HTTPS decryption...");
   try {
-    // 1. Generate Root CA key
     execSync(`openssl genrsa -out "${CA_KEY}" 2048`, { stdio: "ignore" });
-    // 2. Generate Root CA cert
+    fs.chmodSync(CA_KEY, 0o600);
     execSync(`openssl req -x509 -new -nodes -key "${CA_KEY}" -sha256 -days 3650 -subj "/CN=Antigravity Capture CA/O=Development/OU=Telemetry Check" -out "${CA_PEM}"`, { stdio: "ignore" });
-    // 3. Generate common host key (reused for dynamic certs to speed up handshake)
-    execSync(`openssl genrsa -out "${HOST_KEY}" 2048`, { stdio: "ignore" });
-    
+
     console.log(`\n======================================================`);
     console.log(`ROOT CA GENERATED SUCCESSFULLY.`);
     console.log(`To capture HTTPS traffic, you MUST trust the Root CA certificate:`);
@@ -63,17 +59,22 @@ function getCertForHost(hostname) {
   }
 
   const certPath = path.join(CERTS_DIR, `${hostname}.crt`);
+  const hostKeyPath = path.join(CERTS_DIR, `${hostname}.key`);
   const csrPath = path.join(CERTS_DIR, `${hostname}.csr`);
 
-  if (!fs.existsSync(certPath)) {
+  if (!fs.existsSync(certPath) || !fs.existsSync(hostKeyPath)) {
     try {
+      // Generate per-host key
+      execSync(`openssl genrsa -out "${hostKeyPath}" 2048`, { stdio: "ignore" });
+      fs.chmodSync(hostKeyPath, 0o600);
+
       // Create a config extension file for SAN (Subject Alternative Name)
       const extPath = path.join(CERTS_DIR, `${hostname}.ext`);
       const extContent = `authorityKeyIdentifier=keyid,issuer\nbasicConstraints=CA:FALSE\nkeyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment\nsubjectAltName = @alt_names\n\n[alt_names]\nDNS.1 = ${hostname}\n`;
       fs.writeFileSync(extPath, extContent);
 
       // Generate CSR
-      execSync(`openssl req -new -key "${HOST_KEY}" -subj "/CN=${hostname}" -out "${csrPath}"`, { stdio: "ignore" });
+      execSync(`openssl req -new -key "${hostKeyPath}" -subj "/CN=${hostname}" -out "${csrPath}"`, { stdio: "ignore" });
       // Sign with Root CA
       execSync(`openssl x509 -req -in "${csrPath}" -CA "${CA_PEM}" -CAkey "${CA_KEY}" -CAcreateserial -out "${certPath}" -days 365 -sha256 -extfile "${extPath}"`, { stdio: "ignore" });
 
@@ -89,7 +90,7 @@ function getCertForHost(hostname) {
   }
 
   const certData = {
-    key: fs.readFileSync(HOST_KEY),
+    key: fs.readFileSync(hostKeyPath),
     cert: fs.readFileSync(certPath),
   };
   certCache.set(hostname, certData);
@@ -112,7 +113,18 @@ function logRequest(req, isHttps = false) {
 
   const host = req.headers.host || "";
   const scheme = isHttps ? "https://" : "http://";
-  const url = req.url.startsWith("http") ? req.url : `${scheme}${host}${req.url}`;
+  let url = req.url.startsWith("http") ? req.url : `${scheme}${host}${req.url}`;
+
+  // Redact sensitive query parameters from logged URL
+  try {
+    const parsedUrl = new URL(url);
+    for (const key of Array.from(parsedUrl.searchParams.keys())) {
+      if (/^(access_token|api_key|apikey|token|key|secret|password|auth)$/i.test(key)) {
+        parsedUrl.searchParams.set(key, "[REDACTED]");
+      }
+    }
+    url = parsedUrl.toString();
+  } catch {}
 
   // Check if this is a Google AI / Cloud Code Companion endpoint
   let endpointType = "other";

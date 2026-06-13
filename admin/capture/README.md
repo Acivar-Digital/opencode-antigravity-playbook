@@ -40,7 +40,6 @@ To allow the proxy to decrypt HTTPS traffic without certificate errors:
 Launch the Antigravity IDE with the `HTTPS_PROXY` environment variable set:
 ```bash
 export HTTPS_PROXY=http://127.0.0.1:8888
-export NODE_TLS_REJECT_UNAUTHORIZED=0  # Safe for development if cert trust is problematic
 # Launch your Antigravity IDE here (e.g. VS Code, Cursor, or your specific GUI instance)
 ```
 

@@ -1518,7 +1518,10 @@ export function prepareAntigravityRequest(
 
   if (streaming) {
     headers.set("Accept", "text/event-stream");
+  } else {
+    headers.set("Accept", "*/*");
   }
+  headers.set("Accept-Language", "en-US,en;q=0.9");
 
   // Add interleaved thinking header for Claude thinking models
   // This enables real-time streaming of thinking tokens

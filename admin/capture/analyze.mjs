@@ -151,7 +151,7 @@ for (const [endpoint, reqs] of Object.entries(groups)) {
     const cleanName = pluginName.split(" ")[0].toLowerCase();
     const inCaptured = Object.keys(headerUsage).some(n => n.toLowerCase() === cleanName);
     if (!inCaptured && !pluginName.includes("plugin-cli")) {
-      extraHeaders.add ? extraHeaders.add(pluginName) : extraHeaders.push(pluginName);
+      extraHeaders.push(pluginName);
     }
   }
 

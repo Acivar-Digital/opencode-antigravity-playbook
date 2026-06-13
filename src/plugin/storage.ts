@@ -193,6 +193,8 @@ export interface AccountMetadataV3 {
   /** Per-account device fingerprint for rate limit mitigation */
   fingerprint?: import("./fingerprint").Fingerprint;
   fingerprintHistory?: import("./fingerprint").FingerprintVersion[];
+  /** Google user ID (from OAuth userinfo) for x-chrome-id-consistency-request */
+  syncAccountId?: string;
   /** Set when Google asks the user to verify this account before requests can continue. */
   verificationRequired?: boolean;
   verificationRequiredAt?: number;

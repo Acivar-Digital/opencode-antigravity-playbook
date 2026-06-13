@@ -818,6 +818,7 @@ async function persistAccountPool(
         addedAt: now,
         lastUsed: now,
         enabled: true,
+        syncAccountId: result.syncAccountId,
       });
       continue;
     }
@@ -837,6 +838,7 @@ async function persistAccountPool(
       projectId: parts.projectId ?? existing.projectId,
       managedProjectId: parts.managedProjectId ?? existing.managedProjectId,
       lastUsed: now,
+      syncAccountId: result.syncAccountId ?? existing.syncAccountId,
     };
     
     // Update the token index if the token changed
