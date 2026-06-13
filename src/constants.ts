@@ -105,22 +105,18 @@ export const ANTIGRAVITY_HEADERS = {
   "Client-Metadata": `{"ideType":"ANTIGRAVITY","platform":"${process.platform === "win32" ? "WINDOWS" : "MACOS"}","pluginType":"GEMINI"}`,
 } as const;
 
+const runtimeOs = process.platform === "win32" ? "windows" : process.platform;
+const runtimeArch = process.arch === "x64" ? "amd64" : process.arch;
+const runtimeMetadataPlatform = runtimeOs === "windows" ? "WINDOWS" : "MACOS";
+
 export const ANTIGRAVITY_CLI_HEADERS = {
-  get "User-Agent"() {
-    const os = process.platform === "win32" ? "windows" : process.platform;
-    const arch = process.arch === "x64" ? "amd64" : process.arch;
-    return `antigravity/cli/1.0.1 ${os}/${arch}`;
-  },
-  get "Client-Metadata"() {
-    const os = process.platform === "win32" ? "windows" : process.platform;
-    const metadataPlatform = os === "windows" ? "WINDOWS" : "MACOS";
-    return JSON.stringify({
-      ideType: "ANTIGRAVITY_CLI",
-      platform: metadataPlatform,
-      pluginType: "NONE"
-    });
-  }
-};
+  "User-Agent": `antigravity/cli/1.0.1 ${runtimeOs}/${runtimeArch}`,
+  "Client-Metadata": JSON.stringify({
+    ideType: "ANTIGRAVITY_CLI",
+    platform: runtimeMetadataPlatform,
+    pluginType: "NONE"
+  })
+} as const;
 
 export const GEMINI_CLI_HEADERS = {
   "User-Agent": "google-api-nodejs-client/9.15.1",
