@@ -50,3 +50,8 @@ opencode-better-antigravity-auth/
 .dolt/
 *.db
 .beads-credential-key
+
+# Antigravity capture proxy files
+admin/capture/certs/
+admin/capture/capture.jsonl
+admin/capture/analyze_output*.txt

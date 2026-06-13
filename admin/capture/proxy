@@ -1,0 +1,3 @@
+#!/bin/sh
+# Wrapper to start the Antigravity Telemetry Capture Proxy
+exec node "$(dirname "$0")/proxy.mjs" "$@"

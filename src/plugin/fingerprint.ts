@@ -51,6 +51,11 @@ export interface Fingerprint {
   createdAt: number;
   /** @deprecated Kept for backward compat with stored fingerprints */
   quotaUser?: string;
+  chromeVersion?: string;
+  chromeFullVersion?: string;
+  osPlatform?: string;
+  osArch?: string;
+  osBitness?: string;
 }
 
 /**
@@ -68,17 +73,38 @@ export const MAX_FINGERPRINT_HISTORY = 5;
 
 export interface FingerprintHeaders {
   "User-Agent": string;
+  "sec-ch-ua"?: string;
+  "sec-ch-ua-mobile"?: string;
+  "sec-ch-ua-platform"?: string;
+  "sec-ch-ua-arch"?: string;
+  "sec-ch-ua-bitness"?: string;
+  "sec-ch-ua-full-version"?: string;
+  "sec-ch-ua-full-version-list"?: string;
+  "sec-ch-ua-form-factors"?: string;
+  "sec-ch-ua-wow64"?: string;
+  "sec-ch-ua-model"?: string;
+  "x-client-data"?: string;
+  "x-browser-channel"?: string;
+  "x-browser-year"?: string;
+  "x-browser-copyright"?: string;
+  "x-browser-validation"?: string;
+  "x-chrome-id-consistency-request"?: string;
+  "x-goog-update-appid"?: string;
+  "x-goog-update-interactivity"?: string;
+  "x-goog-update-updater"?: string;
 }
 
-const PLATFORM_CHOICES = ["darwin", "win32"] as const;
+const PLATFORM_CHOICES = ["darwin", "win32", "linux"] as const;
 type PlatformChoice = typeof PLATFORM_CHOICES[number];
 
 function randomFrom<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]!;
 }
 
-function platformToDisplayName(platform: string): "WINDOWS" | "MACOS" {
-  return platform === "win32" ? "WINDOWS" : "MACOS";
+function platformToDisplayName(platform: string): "WINDOWS" | "MACOS" | "LINUX" {
+  if (platform === "win32") return "WINDOWS";
+  if (platform === "linux") return "LINUX";
+  return "MACOS";
 }
 
 function generateDeviceId(): string {
@@ -96,12 +122,33 @@ function generateSessionToken(): string {
 export function generateFingerprint(): Fingerprint {
   const platform = randomFrom(PLATFORM_CHOICES);
   const arch = randomFrom(ARCHITECTURES);
-  const osVersion = randomFrom(OS_VERSIONS[platform] ?? OS_VERSIONS.darwin!);
+
+  let userAgent = "";
+  let chromePlatform = "Linux";
+  let chromeArch = "x86";
+  const bitness = "64";
+
+  const chromeFullVersion = "149.0.7827.53";
+  const chromeVersion = "149";
+
+  if (platform === "win32") {
+    userAgent = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
+    chromePlatform = "Windows";
+    chromeArch = arch === "arm64" ? "arm" : "x86";
+  } else if (platform === "darwin") {
+    userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
+    chromePlatform = "macOS";
+    chromeArch = arch === "arm64" ? "arm" : "x86";
+  } else {
+    userAgent = `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
+    chromePlatform = "Linux";
+    chromeArch = "x86";
+  }
 
   return {
     deviceId: generateDeviceId(),
     sessionToken: generateSessionToken(),
-    userAgent: `antigravity/${getAntigravityVersion()} ${platform}/${arch}`,
+    userAgent,
     apiClient: randomFrom(SDK_CLIENTS),
     clientMetadata: {
       ideType: randomFrom(IDE_TYPES),
@@ -109,6 +156,11 @@ export function generateFingerprint(): Fingerprint {
       pluginType: "GEMINI",
     },
     createdAt: Date.now(),
+    chromeVersion,
+    chromeFullVersion,
+    osPlatform: chromePlatform,
+    osArch: chromeArch,
+    osBitness: bitness,
   };
 }
 
@@ -120,10 +172,32 @@ export function collectCurrentFingerprint(): Fingerprint {
   const platform = os.platform();
   const arch = os.arch();
 
+  let userAgent = "";
+  let chromePlatform = "Linux";
+  let chromeArch = "x86";
+  const bitness = "64";
+
+  const chromeFullVersion = "149.0.7827.53";
+  const chromeVersion = "149";
+
+  if (platform === "win32") {
+    userAgent = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
+    chromePlatform = "Windows";
+    chromeArch = arch === "arm64" ? "arm" : "x86";
+  } else if (platform === "darwin") {
+    userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
+    chromePlatform = "macOS";
+    chromeArch = arch === "arm64" ? "arm" : "x86";
+  } else {
+    userAgent = `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
+    chromePlatform = "Linux";
+    chromeArch = "x86";
+  }
+
   return {
     deviceId: generateDeviceId(),
     sessionToken: generateSessionToken(),
-    userAgent: `antigravity/${getAntigravityVersion()} ${platform}/${arch}`,
+    userAgent,
     apiClient: "google-cloud-sdk vscode_cloudshelleditor/0.1",
     clientMetadata: {
       ideType: "ANTIGRAVITY",
@@ -131,6 +205,11 @@ export function collectCurrentFingerprint(): Fingerprint {
       pluginType: "GEMINI",
     },
     createdAt: Date.now(),
+    chromeVersion,
+    chromeFullVersion,
+    osPlatform: chromePlatform,
+    osArch: chromeArch,
+    osBitness: bitness,
   };
 }
 
@@ -161,8 +240,34 @@ export function buildFingerprintHeaders(fingerprint: Fingerprint | null): Partia
     return {};
   }
 
+  const chromePlatform = fingerprint.osPlatform || "Linux";
+  const chromeArch = fingerprint.osArch || "x86";
+  const chromeVersion = fingerprint.chromeVersion || "149";
+  const chromeFullVersion = fingerprint.chromeFullVersion || "149.0.7827.53";
+  const bitness = fingerprint.osBitness || "64";
+  const deviceId = fingerprint.deviceId;
+
   return {
     "User-Agent": fingerprint.userAgent,
+    "sec-ch-ua": `"Google Chrome";v="${chromeVersion}", "Chromium";v="${chromeVersion}", "Not)A;Brand";v="24"`,
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": `"${chromePlatform}"`,
+    "sec-ch-ua-arch": `"${chromeArch}"`,
+    "sec-ch-ua-bitness": `"${bitness}"`,
+    "sec-ch-ua-full-version": `"${chromeFullVersion}"`,
+    "sec-ch-ua-full-version-list": `"Google Chrome";v="${chromeFullVersion}", "Chromium";v="${chromeFullVersion}", "Not)A;Brand";v="24.0.0.0"`,
+    "sec-ch-ua-form-factors": `"Desktop"`,
+    "sec-ch-ua-wow64": "?0",
+    "sec-ch-ua-model": `""`,
+    "x-client-data": "CIy2yQEIprbJAQipncoBCP/4ygEIkqHLAQiHoM0BCK7LlDAIl8+UMAjGz5QwCIHQlDAI9dGUMA==",
+    "x-browser-channel": "stable",
+    "x-browser-year": "2026",
+    "x-browser-copyright": "Copyright 2026 Google LLC. All Rights Reserved.",
+    "x-browser-validation": "6oL9V4vp1rUBqdZ3fRIxeb13+WE=",
+    "x-chrome-id-consistency-request": `version=1,client_id=77185425430.apps.googleusercontent.com,device_id=${deviceId},sync_account_id=114222513075580195089,signin_mode=all_accounts,signout_mode=show_confirmation`,
+    "x-goog-update-appid": "hdokiejnpimakedhajhdlcegeplioahd,nmmhkkegccagdldgiimedpiccmgmieda",
+    "x-goog-update-interactivity": "bg",
+    "x-goog-update-updater": `chrome-${chromeFullVersion}`,
   };
 }
 

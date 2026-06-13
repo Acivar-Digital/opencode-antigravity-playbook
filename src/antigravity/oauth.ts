@@ -135,8 +135,11 @@ async function fetchProjectID(accessToken: string): Promise<string> {
     Authorization: `Bearer ${accessToken}`,
     "Content-Type": "application/json",
     "User-Agent": ANTIGRAVITY_CLI_HEADERS["User-Agent"],
-    "Client-Metadata": getAntigravityHeaders()["Client-Metadata"],
   };
+  const clientMetadata = getAntigravityHeaders()["Client-Metadata"];
+  if (clientMetadata) {
+    loadHeaders["Client-Metadata"] = clientMetadata;
+  }
 
   const loadEndpoints = Array.from(
     new Set<string>([...ANTIGRAVITY_LOAD_ENDPOINTS, ...ANTIGRAVITY_ENDPOINT_FALLBACKS]),

@@ -130,8 +130,11 @@ export async function loadManagedProject(
     Authorization: `Bearer ${accessToken}`,
     "User-Agent": "google-api-nodejs-client/9.15.1",
     "X-Goog-Api-Client": "google-cloud-sdk vscode_cloudshelleditor/0.1",
-    "Client-Metadata": getAntigravityHeaders()["Client-Metadata"],
   };
+  const clientMetadata = getAntigravityHeaders()["Client-Metadata"];
+  if (clientMetadata) {
+    loadHeaders["Client-Metadata"] = clientMetadata;
+  }
 
   const loadEndpoints = Array.from(
     new Set<string>([...ANTIGRAVITY_LOAD_ENDPOINTS, ...ANTIGRAVITY_ENDPOINT_FALLBACKS]),

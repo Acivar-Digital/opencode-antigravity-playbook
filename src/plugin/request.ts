@@ -1540,12 +1540,18 @@ export function prepareAntigravityRequest(
     const selectedHeaders = getRandomizedHeaders("antigravity", requestedModel);
 
     // Antigravity mode: Match Antigravity Manager behavior
-    // AM only sends User-Agent on content requests — no X-Goog-Api-Client, no Client-Metadata header
-    // (ideType=ANTIGRAVITY goes in request body metadata via project.ts, not as a header)
     const fingerprint = options?.fingerprint ?? getSessionFingerprint();
     const fingerprintHeaders = buildFingerprintHeaders(fingerprint);
 
-    headers.set("User-Agent", fingerprintHeaders["User-Agent"] || selectedHeaders["User-Agent"]);
+    // Set all fingerprint-derived Chrome telemetry headers
+    for (const [key, value] of Object.entries(fingerprintHeaders)) {
+      if (value !== undefined) {
+        headers.set(key, value);
+      }
+    }
+    if (!headers.has("User-Agent") && selectedHeaders["User-Agent"]) {
+      headers.set("User-Agent", selectedHeaders["User-Agent"]);
+    }
   } else {
     // antigravity-cli mode
     const cliHeaders = getRandomizedHeaders("antigravity-cli", requestedModel);

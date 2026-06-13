@@ -47,29 +47,16 @@ describe("getRandomizedHeaders", () => {
   })
 
   describe("antigravity style", () => {
-    it("returns all three headers", () => {
+    it("returns only User-Agent header", () => {
       const headers = getRandomizedHeaders("antigravity")
       expect(headers["User-Agent"]).toBeDefined()
-      expect(headers["X-Goog-Api-Client"]).toBeDefined()
-      expect(headers["Client-Metadata"]).toBeDefined()
+      expect(headers["X-Goog-Api-Client"]).toBeUndefined()
+      expect(headers["Client-Metadata"]).toBeUndefined()
     })
 
     it("returns User-Agent in antigravity format", () => {
       const headers = getRandomizedHeaders("antigravity")
       expect(headers["User-Agent"]).toMatch(/^antigravity\//)
-    })
-
-    it("aligns Client-Metadata platform with User-Agent platform", () => {
-      for (let i = 0; i < 50; i++) {
-        const headers = getRandomizedHeaders("antigravity")
-        const ua = headers["User-Agent"]!
-        const metadata = JSON.parse(headers["Client-Metadata"]!)
-        if (ua.includes("windows/")) {
-          expect(metadata.platform).toBe("WINDOWS")
-        } else {
-          expect(metadata.platform).toBe("MACOS")
-        }
-      }
     })
 
     it("never produces a linux User-Agent", () => {
