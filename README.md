@@ -141,6 +141,9 @@ opencode run "Hello" --model=google/antigravity-claude-opus-4-6-thinking --varia
 > - When a Gemini quota pool is exhausted, the plugin automatically falls back to the other pool.
 > - Claude and image models always use Antigravity.
 > Model names are automatically transformed for the target API (e.g., `antigravity-gemini-3-flash` → `gemini-3-flash-preview` for CLI).
+>
+> **Platform & Telemetry Parity:**
+> To guarantee protocol parity and bypass Antigravity telemetry verification checks, the headers generated for `antigravity-cli` match the host platform (mapping to `WINDOWS`, `LINUX`, or `MACOS` in the `Client-Metadata` platform field matching the operating system of the runtime).
 
 **Using variants:**
 ```bash

@@ -1089,7 +1089,7 @@ On June 18, 2026, Google is retiring the legacy Node.js-based Gemini CLI tool an
    - Usage and model quota details (`remainingFraction` and `resetTime`) should instead be accessed exclusively via the primary `v1internal:fetchAvailableModels` response payload.
 3. **Migration Steps:**
    - Rename/update references from `gemini-cli` to `antigravity-cli`. (Completed)
-   - Update user-agent and client metadata headers to mimic the Go client. (Completed)
+   - Update user-agent and client metadata headers to mimic the Go client. Platform-specific telemetry dynamically maps to `WINDOWS`, `LINUX`, or `MACOS` matching the runtime OS to guarantee signature compliance. (Completed)
    - Safely prune any fallback dependencies on `retrieveUserQuota`. (Completed)
 
 ### Architectural Shift & Usage Rules
