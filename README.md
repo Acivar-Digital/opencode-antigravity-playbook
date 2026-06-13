@@ -297,6 +297,8 @@ admin/health
   admin/health --watch --interval 30 --live
   ```
 
+> ⚠️ **Platform Assumption:** The health check script defaults to simulated `linux/amd64` headers when interacting with Google APIs. If your actual system runtime/LLM host differs (e.g. Windows/macOS), you can adjust the `USER_AGENT` constant in `scripts/monitor.mjs`.
+
 If you suspect that account usage is not reflecting the correct situation or if accounts are stuck/disabled, you can force-reset and re-enable all accounts:
 
 ```bash

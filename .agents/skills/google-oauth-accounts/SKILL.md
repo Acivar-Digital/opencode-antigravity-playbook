@@ -442,6 +442,7 @@ admin/fetch-now
 - **One-shot status snapshot:** `admin/health`
 - **Live quota fetch from Google (slower but accurate):** `admin/health --live`
 - **Live monitoring (refreshes every 30 seconds):** `admin/health --watch --interval 30 --live`
+  *(Note: The health checker defaults to `linux/amd64` headers and explicitly warns the user on the dashboard. If the host platform/LLM runs on Windows or macOS, customize the `USER_AGENT` variable directly inside `scripts/monitor.mjs`.)*
 - **Force-reset all account states:** `admin/reset`
 - **Force-refresh and cache quotas:** `admin/fetch-now`
 

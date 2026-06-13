@@ -12,6 +12,7 @@
 
 ### Fixed
 - **CLI OS Invariant Mismatch:** Mapped Linux platforms (`process.platform === "linux"`) to `"LINUX"` instead of `"MACOS"` in the `antigravity-cli` Client-Metadata to prevent detection of mismatched telemetry headers.
+- **Health Checker Default OS Telemetry:** Defaulted user-agent headers in `scripts/monitor.mjs` to Linux (`antigravity/linux/amd64`) and added an explicit dashboard warning prompt indicating the assumed host platform.
 
 ## [2.0.0] - 2026-06-18
 

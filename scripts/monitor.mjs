@@ -26,7 +26,7 @@ import { join } from "node:path";
 const CLIENT_ID = "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com";
 const CLIENT_SECRET = "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";
 const CLOUD_CODE_BASE = "https://cloudcode-pa.googleapis.com";
-const USER_AGENT = "antigravity/windows/amd64";
+const USER_AGENT = "antigravity/linux/amd64";
 const FALLBACK_PROJECT_ID = "bamboo-precept-lgxtn";
 
 // ── Paths ────────────────────────────────────────────────────────────────────
@@ -279,6 +279,7 @@ async function renderDashboard(opts) {
   console.log(color("║", C.blue) + color("  ANTIGRAVITY ACCOUNT MONITOR", C.bold + C.white) + color(`                  ${timestamp}  `, C.dim) + color("║", C.blue));
   console.log(color("╚══════════════════════════════════════════════════════════════╝", C.blue));
   console.log(`  Quota source: ${source}  |  Accounts file: ${ACCOUNTS_PATH}`);
+  console.log(color("  ⚠️  LLM Host Platform Assumed: Linux (linux/amd64). If running on Windows/macOS, modify USER_AGENT in scripts/monitor.mjs.", C.yellow));
   console.log("");
 
   const alerts = [];
