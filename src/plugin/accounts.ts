@@ -592,26 +592,33 @@ export class AccountManager {
   }
 
   getNextForFamily(family: ModelFamily, model?: string | null, headerStyle: HeaderStyle = "antigravity", softQuotaThresholdPercent: number = 100, softQuotaCacheTtlMs: number = 10 * 60 * 1000): ManagedAccount | null {
-    const available = this.accounts.filter((a) => {
+    const total = this.accounts.length;
+    if (total === 0) return null;
+
+    // Scan from cursor position through the full accounts array (not just available ones).
+    // This ensures the cursor advances uniformly over all accounts regardless of which
+    // are currently rate-limited, preventing the same account from being chosen on every
+    // call when the available pool is smaller than the full pool.
+    const startCursor = this.cursor;
+    for (let offset = 0; offset < total; offset++) {
+      const idx = (startCursor + offset) % total;
+      const a = this.accounts[idx];
+      if (!a) continue;
       clearExpiredRateLimits(a);
-      return a.enabled !== false && 
-             !isRateLimitedForHeaderStyle(a, family, headerStyle, model) && 
-             !isOverSoftQuotaThreshold(a, family, softQuotaThresholdPercent, softQuotaCacheTtlMs, model) &&
-             !this.isAccountCoolingDown(a);
-    });
-
-    if (available.length === 0) {
-      return null;
+      if (
+        a.enabled !== false &&
+        !isRateLimitedForHeaderStyle(a, family, headerStyle, model) &&
+        !isOverSoftQuotaThreshold(a, family, softQuotaThresholdPercent, softQuotaCacheTtlMs, model) &&
+        !this.isAccountCoolingDown(a)
+      ) {
+        // Advance cursor past this account so the next call picks the one after it
+        this.cursor = idx + 1;
+        // Note: lastUsed is now updated after successful request via markAccountUsed()
+        return a;
+      }
     }
 
-    const account = available[this.cursor % available.length];
-    if (!account) {
-      return null;
-    }
-
-    this.cursor++;
-    // Note: lastUsed is now updated after successful request via markAccountUsed()
-    return account;
+    return null;
   }
 
   markRateLimited(

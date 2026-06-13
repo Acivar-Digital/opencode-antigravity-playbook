@@ -419,6 +419,7 @@ Use this matrix before rotating or resetting accounts.
 | `404 Not Found` with `Effective Model: gemini-3.5-flash` | Wrong API model name for Gemini 3.5 Flash | Patch model-resolver.js to use `gemini-3.5-flash-low` instead of `gemini-3.5-flash` (see Gemini 3.5 Flash Model Resolution Fix below) |
 | `All accounts rate-limited` with snapshot showing all `ready` | Active index stuck on a rate-limited account; plugin loops through accounts without sending HTTP requests | Reset `activeIndex` and `activeIndexByFamily` to a healthy account index; check that `account_selection_strategy` is set (not null) |
 | No HTTP requests in debug logs (0 POST/GET entries) | Plugin stuck in account selection loop, never reaches the network layer | Reset `activeIndex`; verify `account_selection_strategy` is configured; check version patch is applied |
+| `round-robin` rotation stuck on single account | The cursor indexed into the filtered available list rather than the full list, causing mod limits to loop on the same active index when other accounts were rate-limited or over-quota | Update to version >= 2.0.0 (or fix `getNextForFamily` in `accounts.ts` to scan across the full accounts array starting from the cursor) |
 
 Do not rotate accounts for schema/tool/model `400` errors unless the account is also showing auth/quota/rate-limit symptoms.
 

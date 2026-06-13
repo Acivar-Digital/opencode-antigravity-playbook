@@ -604,6 +604,8 @@ Most users don't need to configure anything — defaults work well.
 | **5+ accounts** | `"account_selection_strategy": "round-robin"` |
 | **Parallel agents** | Add `"pid_offset_enabled": true` |
 
+*Note: In version 2.0.0, the `round-robin` strategy was fixed to ensure request distribution is uniformly balanced across all accounts even when some accounts are temporarily rate-limited or over-quota.*
+
 ### Quota Protection
 
 | Option | Default | What it does |

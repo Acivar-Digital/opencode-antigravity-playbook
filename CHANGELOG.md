@@ -6,6 +6,10 @@
 - **Unified Quota System & Gemini CLI Retirement** - Replaced the dual-quota setup with a single Antigravity-only quota flow utilizing `v1internal:fetchAvailableModels`. Removed `retrieveUserQuota` endpoints completely.
 - **Antigravity CLI Cutover** - Migrated fallback headers and model routing from the deprecated `gemini-cli` Node.js client to the compiled Go `antigravity-cli` protocol. Generated user-agent and client-metadata structures to perfectly match compiled Go clients.
 
+### Fixed
+- **Persistent Round-Robin Rotation** - Fixed a critical round-robin cursor bug in `getNextForFamily` where the rotation cursor indexed into the filtered available list instead of the full accounts list. This ensures uniform rotation across all accounts even when subset of accounts are temporarily rate-limited or over-quota.
+
+
 ## [1.6.0] - 2026-02-20
 
 ### Fixed
