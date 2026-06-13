@@ -935,6 +935,22 @@ opencode run "Hello" --model=google/antigravity-gemini-3-flash
 opencode run "Hello" --model=google/antigravity-claude-opus-4-6-thinking --variant=max
 ```
 
+## June 18, 2026: Gemini CLI Deprecation & Antigravity CLI Transition
+
+On June 18, 2026, Google is retiring the legacy Node.js-based Gemini CLI tool and its backend APIs.
+
+### Technical Implications
+1. **Header Stack Shift:**
+   - Legacy `gemini-cli` used Node.js headers (`User-Agent: google-api-nodejs-client/...`, `gl-node/...`).
+   - The Go-based replacement `antigravity-cli` uses compiled Go HTTP client headers (`User-Agent: antigravity/cli/1.0.1 linux/amd64`, no Node references).
+2. **Quota Tracking/Usage Access:**
+   - The legacy `v1internal:retrieveUserQuota` endpoint (used by `fetchGeminiCliQuota`) will return errors or become inactive.
+   - Usage and model quota details (`remainingFraction` and `resetTime`) should instead be accessed exclusively via the primary `v1internal:fetchAvailableModels` response payload.
+3. **Migration Steps:**
+   - Rename/update references from `gemini-cli` to `antigravity-cli`.
+   - Update user-agent and client metadata headers to mimic the Go client.
+   - Safely prune any fallback dependencies on `retrieveUserQuota`.
+
 ## Safety Rules
 
 - Never commit, paste, print, or expose refresh tokens.
