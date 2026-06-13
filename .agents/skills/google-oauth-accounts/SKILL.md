@@ -1006,8 +1006,9 @@ For each account to sync:
 5. Set `enabled: true`.
 6. Set `addedAt` and `lastUsed` to the current timestamp in milliseconds.
 7. **Preserve the `fingerprint` object** if it already exists in the OpenCode entry. If creating a new entry, the plugin will auto-generate a fingerprint on first use.
-8. **Fingerprint caveat:** The Antigravity IDE (Electron) uses a specific device fingerprint (`deviceId`, `sessionToken`, `userAgent` like `antigravity/4.2.1 darwin/arm64`). The OpenCode plugin auto-generates its own fingerprint on first use. These fingerprints are **not required to match** — Google accepts requests from different fingerprints for the same OAuth token. Do not copy the IDE's fingerprint into the OpenCode entry unless specifically troubleshooting auth failures.
-9. Never print or commit tokens.
+8. **Fingerprint & Telemetry Parity:** The plugin emulates a high-fidelity Chrome browser identity (Chrome 149, WebKit, and Gecko) for content requests rather than simple user-agents. It dynamically maps host operating systems (`WINDOWS`, `MACOS`, `LINUX`) to matching user-agents and Structured Client Hints (`sec-ch-ua-*`).
+9. **Single-Machine Identity Consistency:** The plugin extracts `syncAccountId` (Google User ID) from the OAuth userinfo response, persisting it in the account metadata. This maps directly to the `x-chrome-id-consistency-request` header. Google uses consistency IDs and client hints to track user logins; keeping `syncAccountId` and the device fingerprint stable per account prevents security triggers and rate-limiting blocks.
+10. Never print or commit tokens.
 
 ### Account ID Mismatch Caveat
 

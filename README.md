@@ -143,7 +143,16 @@ opencode run "Hello" --model=google/antigravity-claude-opus-4-6-thinking --varia
 > Model names are automatically transformed for the target API (e.g., `antigravity-gemini-3-flash` → `gemini-3-flash-preview` for CLI).
 >
 > **Platform & Telemetry Parity:**
-> To guarantee protocol parity and bypass Antigravity telemetry verification checks, the headers generated for `antigravity-cli` match the host platform (mapping to `WINDOWS`, `LINUX`, or `MACOS` in the `Client-Metadata` platform field matching the operating system of the runtime).
+> To guarantee protocol parity and bypass Antigravity telemetry verification checks, the headers generated for both `antigravity` (Electron client) and `antigravity-cli` (Go client) match the host platform (mapping to `WINDOWS`, `LINUX`, or `MACOS` in the platform metadata matching the operating system of the runtime).
+>
+> **Browser Telemetry Emulation (antigravity mode):**
+> For `antigravity` content requests, the plugin generates a high-fidelity Chrome browser identity (Chrome 149, WebKit, and Gecko) including structural Client Hints (`sec-ch-ua-*`), Chrome Variations (`x-client-data`), session consistency (`x-chrome-id-consistency-request`), and Google Update (`x-goog-update-*`) headers. These identities are bound consistently to each account's persistent `syncAccountId` (Google user ID), simulating stable user logins on separate machines to prevent security triggers.
+>
+> **Telemetry Capture & Analysis Tools:**
+> The repository includes built-in SSL interception and analysis tools under `admin/capture/` to proxy legitimate Antigravity traffic, redact sensitive credentials, and diff the telemetry against the plugin:
+> - `admin/capture/proxy` — Starts a local HTTPS decryption proxy with isolated per-host TLS key generation.
+> - `admin/capture/analyze` — Reads captured traffic and performs a side-by-side gap analysis of all headers.
+> See [admin/capture/README.md](admin/capture/README.md) for usage details.
 
 **Using variants:**
 ```bash

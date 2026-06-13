@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.2.0] - 2026-06-14
+
+### Added
+- **Chrome Telemetry & Header Spoofing:** Implemented a high-fidelity Chrome telemetry emulation layer on content requests (User-Agent + Client Hints + Google Update/Extension headers). Includes `sec-ch-ua`, `sec-ch-ua-platform`, `sec-ch-ua-platform-version`, `sec-ch-ua-arch`, `sec-ch-ua-bitness`, `sec-ch-ua-mobile`, `sec-ch-ua-model`, `sec-ch-ua-form-factors`, `sec-ch-ua-full-version`, `sec-ch-ua-full-version-list`, `sec-ch-ua-wow64`, `x-client-data` (Chrome Variations), `x-browser-channel`, `x-browser-year`, `x-browser-copyright`, `x-browser-validation`, `x-chrome-id-consistency-request`, and `x-goog-update-*` headers.
+- **SSL MITM Capture Proxy:** Added an HTTPS interception proxy under `admin/capture/proxy` utilizing system `openssl` for dynamic certificate signing to inspect and log outgoing Antigravity IDE HTTP traffic.
+- **Capture Analyzer:** Added a telemetry diff analyzer under `admin/capture/analyze` to perform a side-by-side gap analysis comparing captured IDE traffic against the plugin's headers.
+- **Persistent Machine Identity:** Added `syncAccountId` parsing from the OAuth userinfo endpoint, ensuring a stable per-account machine fingerprint and preventing rate limits or security blocks.
+
+### Changed
+- **Content Headers Cleanup:** Removed redundant/invalid `X-Goog-Api-Client` and `Client-Metadata` headers from the `antigravity` content request path to align with legitimate IDE requests.
+- **Proxy Security Hardening:** Switched capture proxy to generate isolated per-host private keys and hardened key permissions (`0600`).
+- **Log Data Redaction:** Implemented query parameter redaction in proxy logging to prevent accidental token exposure.
+
+### Fixed
+- **Linux Architecture Telemetry:** Fixed a bug in `sec-ch-ua-arch` mapping where Linux hosts were misidentified as `x86` instead of `arm`.
+
 ## [2.1.0] - 2026-06-14
 
 ### Added
