@@ -178,5 +178,6 @@ Per-account device fingerprints stored in `antigravity-accounts.json`. Each fing
 
 - [README.md](README.md) — Installation & usage
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — Detailed architecture guide
+- [docs/RISK-AND-CHALLENGES.md](docs/RISK-AND-CHALLENGES.md) — Architecture, technical challenges, and ToS risks
 - [docs/ANTIGRAVITY_API_SPEC.md](docs/ANTIGRAVITY_API_SPEC.md) — API reference
 - [CHANGELOG.md](CHANGELOG.md) — Version history

@@ -709,6 +709,7 @@ See the full [Troubleshooting Guide](docs/TROUBLESHOOTING.md) for solutions to c
 - [Model Variants](docs/MODEL-VARIANTS.md) — Thinking budgets and variant system
 - [Troubleshooting](docs/TROUBLESHOOTING.md) — Common issues and fixes
 - [Architecture](docs/ARCHITECTURE.md) — How the plugin works
+- [Architecture & Risks](docs/RISK-AND-CHALLENGES.md) — Architecture summary, technical challenges, and ToS risks
 - [API Spec](docs/ANTIGRAVITY_API_SPEC.md) — Antigravity API reference
 
 ---
