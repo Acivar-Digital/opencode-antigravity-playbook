@@ -46,7 +46,7 @@ Enable Opencode to authenticate against **Antigravity** (Google's IDE) via OAuth
 Paste this into any LLM agent (Claude Code, OpenCode, Cursor, etc.):
 
 ```
-Install the opencode-antigravity-auth plugin and add the Antigravity model definitions to ~/.config/opencode/opencode.json by following: https://raw.githubusercontent.com/NoeFabris/opencode-antigravity-auth/dev/README.md
+Install the opencode-antigravity-auth plugin and add the Antigravity model definitions to ~/.config/opencode/opencode.json by following: https://raw.githubusercontent.com/Acivar-Digital/opencode-antigravity-playbook/main/README.md
 ```
 
 **Option B: Manual setup**
@@ -115,10 +115,13 @@ opencode run "Hello" --model=google/antigravity-claude-opus-4-6-thinking --varia
 | `antigravity-gemini-3-pro` | low, high | Gemini 3 Pro with thinking |
 | `antigravity-gemini-3.1-pro` | low, high | Gemini 3.1 Pro with thinking (rollout-dependent) |
 | `antigravity-gemini-3-flash` | minimal, low, medium, high | Gemini 3 Flash with thinking |
+| `antigravity-gemini-3.5-flash-low` | — | Gemini 3.5 Flash Low |
+| `antigravity-gemini-3.5-flash-extra-low` | — | Gemini 3.5 Flash Extra Low |
+| `antigravity-gemini-3.5-flash-high` | — | Gemini 3.5 Flash High |
 | `antigravity-claude-sonnet-4-6` | — | Claude Sonnet 4.6 |
 | `antigravity-claude-opus-4-6-thinking` | low, max | Claude Opus 4.6 with extended thinking |
 
-**Gemini CLI quota** (separate from Antigravity; used when `cli_first` is true or as fallback):
+**Antigravity CLI quota** (separate from Antigravity; used when `cli_first` is true or as fallback):
 
 | Model | Notes |
 |-------|-------|
@@ -131,7 +134,7 @@ opencode run "Hello" --model=google/antigravity-claude-opus-4-6-thinking --varia
 
 > **Routing Behavior:**
 > - **Antigravity-first (default):** Gemini models use Antigravity quota across accounts.
-> - **CLI-first (`cli_first: true`):** Gemini models use Gemini CLI quota first.
+> - **CLI-first (`cli_first: true`):** Gemini models use Antigravity CLI quota first.
 > - When a Gemini quota pool is exhausted, the plugin automatically falls back to the other pool.
 > - Claude and image models always use Antigravity.
 > Model names are automatically transformed for the target API (e.g., `antigravity-gemini-3-flash` → `gemini-3-flash-preview` for CLI).
@@ -184,6 +187,21 @@ Add this to your `~/.config/opencode/opencode.json`:
             "high": { "thinkingLevel": "high" }
           }
         },
+        "antigravity-gemini-3.5-flash-low": {
+          "name": "Gemini 3.5 Flash Low (Antigravity)",
+          "limit": { "context": 1048576, "output": 65536 },
+          "modalities": { "input": ["text", "image", "pdf"], "output": ["text"] }
+        },
+        "antigravity-gemini-3.5-flash-extra-low": {
+          "name": "Gemini 3.5 Flash Extra Low (Antigravity)",
+          "limit": { "context": 1048576, "output": 65536 },
+          "modalities": { "input": ["text", "image", "pdf"], "output": ["text"] }
+        },
+        "antigravity-gemini-3.5-flash-high": {
+          "name": "Gemini 3.5 Flash High (Antigravity)",
+          "limit": { "context": 1048576, "output": 65536 },
+          "modalities": { "input": ["text", "image", "pdf"], "output": ["text"] }
+        },
         "antigravity-claude-sonnet-4-6": {
           "name": "Claude Sonnet 4.6 (Antigravity)",
           "limit": { "context": 200000, "output": 64000 },
@@ -199,32 +217,32 @@ Add this to your `~/.config/opencode/opencode.json`:
           }
         },
         "gemini-2.5-flash": {
-          "name": "Gemini 2.5 Flash (Gemini CLI)",
+          "name": "Gemini 2.5 Flash (Antigravity CLI)",
           "limit": { "context": 1048576, "output": 65536 },
           "modalities": { "input": ["text", "image", "pdf"], "output": ["text"] }
         },
         "gemini-2.5-pro": {
-          "name": "Gemini 2.5 Pro (Gemini CLI)",
+          "name": "Gemini 2.5 Pro (Antigravity CLI)",
           "limit": { "context": 1048576, "output": 65536 },
           "modalities": { "input": ["text", "image", "pdf"], "output": ["text"] }
         },
         "gemini-3-flash-preview": {
-          "name": "Gemini 3 Flash Preview (Gemini CLI)",
+          "name": "Gemini 3 Flash Preview (Antigravity CLI)",
           "limit": { "context": 1048576, "output": 65536 },
           "modalities": { "input": ["text", "image", "pdf"], "output": ["text"] }
         },
         "gemini-3-pro-preview": {
-          "name": "Gemini 3 Pro Preview (Gemini CLI)",
+          "name": "Gemini 3 Pro Preview (Antigravity CLI)",
           "limit": { "context": 1048576, "output": 65535 },
           "modalities": { "input": ["text", "image", "pdf"], "output": ["text"] }
         },
         "gemini-3.1-pro-preview": {
-          "name": "Gemini 3.1 Pro Preview (Gemini CLI)",
+          "name": "Gemini 3.1 Pro Preview (Antigravity CLI)",
           "limit": { "context": 1048576, "output": 65535 },
           "modalities": { "input": ["text", "image", "pdf"], "output": ["text"] }
         },
         "gemini-3.1-pro-preview-customtools": {
-          "name": "Gemini 3.1 Pro Preview Custom Tools (Gemini CLI)",
+          "name": "Gemini 3.1 Pro Preview Custom Tools (Antigravity CLI)",
           "limit": { "context": 1048576, "output": 65535 },
           "modalities": { "input": ["text", "image", "pdf"], "output": ["text"] }
         }
@@ -234,7 +252,7 @@ Add this to your `~/.config/opencode/opencode.json`:
 }
 ```
 
-> **Backward Compatibility:** Legacy model names with `antigravity-` prefix (e.g., `antigravity-gemini-3-flash`) still work. The plugin automatically handles model name transformation for both Antigravity and Gemini CLI APIs.
+> **Backward Compatibility:** Legacy model names with `antigravity-` prefix (e.g., `antigravity-gemini-3-flash`) still work. The plugin automatically handles model name transformation for both Antigravity and Antigravity CLI APIs.
 
 </details>
 
@@ -303,7 +321,7 @@ Permission 'cloudaicompanion.companions.generateChat' denied on resource
 '//cloudaicompanion.googleapis.com/projects/rising-fact-p41fc/locations/global'
 ```
 
-**Cause:** Plugin falls back to a default project ID when no valid project is found. This works for Antigravity but fails for Gemini CLI models.
+**Cause:** Plugin falls back to a default project ID when no valid project is found. This works for Antigravity but fails for Antigravity CLI models.
 
 **Solution:**
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
@@ -389,7 +407,7 @@ This usually means an MCP tool name starts with a number (for example, a 1mcp ke
 **Diagnosis:**
 1. Disable all MCP servers in your config
 2. Enable one-by-one until error reappears
-3. Report the specific MCP in a [GitHub issue](https://github.com/NoeFabris/opencode-antigravity-auth/issues)
+3. Report the specific MCP in a [GitHub issue](https://github.com/Acivar-Digital/opencode-antigravity-playbook/issues)
 
 ---
 
@@ -581,7 +599,7 @@ Create `~/.config/opencode/antigravity.json` for optional settings:
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/NoeFabris/opencode-antigravity-auth/main/assets/antigravity.schema.json"
+  "$schema": "https://raw.githubusercontent.com/Acivar-Digital/opencode-antigravity-playbook/main/assets/antigravity.schema.json"
 }
 ```
 
@@ -593,7 +611,7 @@ Most users don't need to configure anything — defaults work well.
 |--------|---------|--------------
 | `keep_thinking` | `false` | Preserve Claude's thinking across turns. **Warning:** enabling may degrade model stability. |
 | `session_recovery` | `true` | Auto-recover from tool errors |
-| `cli_first` | `false` | Route Gemini models to Gemini CLI first (Claude and image models stay on Antigravity). |
+| `cli_first` | `false` | Route Gemini models to Antigravity CLI first (Claude and image models stay on Antigravity). |
 
 ### Account Rotation
 
@@ -659,7 +677,7 @@ See the full [Troubleshooting Guide](docs/TROUBLESHOOTING.md) for solutions to c
 - Auth problems and token refresh
 - "Model not found" errors
 - Session recovery
-- Gemini CLI permission errors
+- Antigravity CLI permission errors
 - Safari OAuth issues
 - Plugin compatibility
 - Migration guides
