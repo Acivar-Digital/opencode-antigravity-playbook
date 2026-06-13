@@ -148,6 +148,10 @@ Accounts are stored in:
 
 This file contains OAuth refresh tokens. Treat it like a password file.
 
+### Extracting from Antigravity Desktop (VSCDB)
+
+You can automatically extract Google refresh tokens from the Antigravity Desktop application's local database (`state.vscdb`) by running the VSCDB Extractor utility (`src/utils/vscdb-extractor.ts`). The tool decodes the Base64 Protobuf payload stored under the `antigravityUnifiedStateSync.oauthToken` key to dynamically import valid OAuth tokens into the account pool.
+
 ### Storage v4 fields
 
 Current storage uses schema v4. Important fields include:
@@ -408,10 +412,11 @@ Use this matrix before rotating or resetting accounts.
 | 403 `validation_required` | Google verification required | Disable/verify account via login menu |
 | 403 Gemini CLI `cloudaicompanion.companions.generateChat` | Missing GCP project/API | Enable Gemini for Google Cloud API and add `projectId` |
 | 429 `QUOTA_EXHAUSTED` | Quota exhausted | Wait, rotate, or add accounts |
-| 429 `RATE_LIMIT_EXCEEDED` | Short rate limit | Wait/backoff, then retry or rotate |
+| 429 `RATE_LIMIT_EXCEEDED` | Short rate limit | Wait/backoff, then retry or rotate. The `src/utils/rate-limit.ts` parser calculates exact millisecond cooldowns from string values (e.g., `2h1m25s`). |
+| Token Consumption | High API costs on background tasks | Background tasks like title generation are automatically downgraded to `gemini-2.5-flash` via the `token-saver.ts` utility. |
 | 503/529 `MODEL_CAPACITY_EXHAUSTED` | Capacity/server busy | Same-account retry/backoff; do not mark quota exhausted |
 | 500 `SERVER_ERROR` | Server error | Retry/backoff; do not rotate unless persistent |
-| `Unknown name "parameters"` | Tool schema incompatibility | Update plugin, disable MCP servers, fix schemas |
+| `Unknown name "parameters"` / `400 INVALID_ARGUMENT` | Tool schema incompatibility | Schemas are recursively scrubbed (e.g. `propertyNames`, `anyOf`, `[undefined]`) by `schema-cleaner.ts` before reaching the API. |
 | Invalid function name | MCP/tool naming issue | Rename MCP keys so names start with a letter or underscore |
 | `tool_use` without `tool_result` | Interrupted tool execution | Use recovery flow or `/undo` |
 | Thinking block order error | Thinking/signature corruption | Let plugin recover; consider `keep_thinking: false` |

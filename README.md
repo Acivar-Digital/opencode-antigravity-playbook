@@ -10,6 +10,9 @@ Enable Opencode to authenticate against **Antigravity** (Google's IDE) via OAuth
 
 ## What You Get
 
+- **Smart Token Saver** — intercepts background tasks (like title/summary generation) and silently downgrades them to cheap models (`gemini-2.5-flash`), saving high-tier rate limits.
+- **Deep JSON Schema Cleaner** — automatically recursively scrubs MCP tool schemas to strip unsupported fields (`propertyNames`, `anyOf`), permanently fixing `400 INVALID_ARGUMENT` tool call errors.
+- **Precise Rate Limiting & SQLite Extractor** — parses exact millisecond cooldowns from API errors and extracts existing Google refresh tokens automatically from `state.vscdb`.
 - **Claude Opus 4.6, Sonnet 4.6** and **Gemini 3.1 Pro/Flash** via Google OAuth
 - **Multi-account support** — add multiple Google accounts, auto-rotates when rate-limited
 - **Antigravity CLI fallbacks** — seamlessly switches to `antigravity-cli` headers when default limits are reached
