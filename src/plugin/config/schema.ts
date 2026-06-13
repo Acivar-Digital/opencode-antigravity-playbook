@@ -271,22 +271,12 @@ export const AntigravityConfigSchema = z.object({
   /**
    * @deprecated Kept only for backward compatibility.
    * This flag is ignored at runtime.
-   * Gemini requests always fall back between Antigravity and Gemini CLI quotas.
+   * Gemini requests always fall back between Antigravity and Antigravity CLI quotas.
    *
    * @default false
    */
   quota_fallback: z.boolean().default(false),
 
-  /**
-   * Prefer gemini-cli routing before Antigravity for Gemini models.
-   * 
-   * When false (default): Antigravity is tried first, then gemini-cli.
-   * When true: gemini-cli is tried first, then Antigravity.
-   * 
-   * @default false
-   */
-  cli_first: z.boolean().default(false),
-  
   /**
    * Strategy for selecting accounts when making requests.
    * Env override: OPENCODE_ANTIGRAVITY_ACCOUNT_SELECTION_STRATEGY
@@ -465,7 +455,6 @@ export const DEFAULT_CONFIG: AntigravityConfig = {
   proactive_refresh_check_interval_seconds: 300,
   max_rate_limit_wait_seconds: 300,
   quota_fallback: false,
-  cli_first: false,
   account_selection_strategy: 'hybrid',
   pid_offset_enabled: false,
   switch_on_first_rate_limit: true,

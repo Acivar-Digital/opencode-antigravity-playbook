@@ -45,3 +45,8 @@ CLIProxyAPI/
 LLM-API-Key-Proxy/
 opencode/
 opencode-better-antigravity-auth/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key

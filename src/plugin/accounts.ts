@@ -122,7 +122,7 @@ export function calculateBackoffMs(
   }
 }
 
-export type BaseQuotaKey = "claude" | "gemini-antigravity" | "antigravity-cli" | "gemini-cli";
+export type BaseQuotaKey = "claude" | "gemini-antigravity" | "antigravity-cli";
 export type QuotaKey = BaseQuotaKey | `${BaseQuotaKey}:${string}`;
 
 export interface ManagedAccount {
@@ -170,7 +170,7 @@ function getQuotaKey(family: ModelFamily, headerStyle: HeaderStyle, model?: stri
   if (family === "claude") {
     return "claude";
   }
-  const base = headerStyle === "antigravity-cli" ? "antigravity-cli" : (headerStyle === "gemini-cli" ? "gemini-cli" : "gemini-antigravity");
+  const base = headerStyle === "antigravity-cli" ? "antigravity-cli" : "gemini-antigravity";
   if (model) {
     return `${base}:${model}`;
   }
@@ -188,7 +188,7 @@ function isRateLimitedForFamily(account: ManagedAccount, family: ModelFamily, mo
   }
   
   const antigravityIsLimited = isRateLimitedForHeaderStyle(account, family, "antigravity", model);
-  const cliIsLimited = isRateLimitedForHeaderStyle(account, family, "antigravity-cli", model) && isRateLimitedForHeaderStyle(account, family, "gemini-cli", model);
+  const cliIsLimited = isRateLimitedForHeaderStyle(account, family, "antigravity-cli", model);
   
   return antigravityIsLimited && cliIsLimited;
 }
@@ -519,6 +519,7 @@ export class AccountManager {
       if (next) {
         this.markTouchedForQuota(next, quotaKey);
         this.currentAccountIndexByFamily[family] = next.index;
+        this.requestSaveToDisk();
       }
       return next;
     }
@@ -551,6 +552,7 @@ export class AccountManager {
           selected.lastUsed = nowMs();
           this.markTouchedForQuota(selected, quotaKey);
           this.currentAccountIndexByFamily[family] = selected.index;
+          this.requestSaveToDisk();
           return selected;
         }
       }
@@ -675,10 +677,8 @@ export class AccountManager {
       } else {
         const antigravityKey = getQuotaKey(family, "antigravity", model);
         const agCliKey = getQuotaKey(family, "antigravity-cli", model);
-        const cliKey = getQuotaKey(family, "gemini-cli", model);
         delete account.rateLimitResetTimes[antigravityKey];
         delete account.rateLimitResetTimes[agCliKey];
-        delete account.rateLimitResetTimes[cliKey];
       }
       account.consecutiveFailures = 0;
     }
@@ -758,9 +758,7 @@ export class AccountManager {
     if (!isRateLimitedForHeaderStyle(account, family, "antigravity-cli", model)) {
       return "antigravity-cli";
     }
-    if (!isRateLimitedForHeaderStyle(account, family, "gemini-cli", model)) {
-      return "gemini-cli";
-    }
+    
     return null;
   }
 
@@ -938,10 +936,10 @@ export class AccountManager {
       } else {
         // For Gemini, account becomes available when EITHER pool expires for this model/family
         const antigravityKey = getQuotaKey(family, "antigravity", model);
-        const cliKey = getQuotaKey(family, "gemini-cli", model);
+        const agCliKey = getQuotaKey(family, "antigravity-cli", model);
 
         const t1 = a.rateLimitResetTimes[antigravityKey];
-        const t2 = a.rateLimitResetTimes[cliKey];
+        const t2 = a.rateLimitResetTimes[agCliKey];
         
         const accountWait = Math.min(
           t1 !== undefined ? Math.max(0, t1 - nowMs()) : Infinity,

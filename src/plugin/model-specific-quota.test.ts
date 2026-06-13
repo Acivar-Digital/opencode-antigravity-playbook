@@ -57,7 +57,6 @@ describe("Model-specific Gemini quota", () => {
 
     manager2.markRateLimited(account, 60000, "gemini", "antigravity", modelPro);
     manager2.markRateLimited(account, 60000, "gemini", "antigravity-cli", modelPro);
-    manager2.markRateLimited(account, 60000, "gemini", "gemini-cli", modelPro);
 
     // No other account available, so returns null for the rate-limited model
     expect(manager2.getCurrentOrNextForFamily("gemini", modelPro)).toBeNull();

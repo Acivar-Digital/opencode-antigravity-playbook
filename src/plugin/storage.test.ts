@@ -261,7 +261,6 @@ describe("Storage Migration", () => {
       expect(account.rateLimitResetTimes).toEqual({
         "gemini-antigravity": future,
       });
-      expect(account.rateLimitResetTimes?.["gemini-cli"]).toBeUndefined();
     });
 
     it("preserves claude rate limits", () => {

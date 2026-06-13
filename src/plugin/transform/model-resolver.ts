@@ -10,6 +10,7 @@ import type { HeaderStyle } from "../../constants";
 
 export interface ModelResolverOptions {
   cli_first?: boolean;
+
 }
 
 /**
@@ -39,7 +40,7 @@ export const GEMINI_3_THINKING_LEVELS = ["minimal", "low", "medium", "high"] as 
  * - Claude non-thinking: claude-{model} (no -thinking suffix)
  */
 export const MODEL_ALIASES: Record<string, string> = {
-  // Gemini 3 variants - for Gemini CLI only (tier stripped, thinkingLevel used)
+  // Gemini 3 variants - for Antigravity CLI only (tier stripped, thinkingLevel used)
   // For Antigravity, these are bypassed and full model name is kept
   "gemini-3-pro-low": "gemini-3-pro",
   "gemini-3-pro-high": "gemini-3-pro",
@@ -159,8 +160,7 @@ function isGemini3FlashModel(model: string): boolean {
  * and corresponding thinking configuration.
  *
  * Quota routing:
- * - Default to Antigravity quota unless cli_first is enabled for Gemini models
- * - Fallback to Gemini CLI happens at account rotation level when Antigravity is exhausted
+ * - Fallback to Antigravity CLI happens at account rotation level when Antigravity is exhausted
  * - "antigravity-" prefix marks explicit quota (no fallback allowed)
  * - Claude and image models always use Antigravity
  *
@@ -171,7 +171,7 @@ function isGemini3FlashModel(model: string): boolean {
  * - "claude-opus-4-6-thinking-medium" → { quotaPreference: "antigravity" }
  *
  * @param requestedModel - The model name from the request
- * @param options - Optional configuration including cli_first preference
+ * @param options - Optional configuration
  * @returns Resolved model with thinking configuration
  */
 export function resolveModelWithTier(requestedModel: string, options: ModelResolverOptions = {}): ResolvedModel {
@@ -183,11 +183,9 @@ export function resolveModelWithTier(requestedModel: string, options: ModelResol
 
   const isImageModel = IMAGE_GENERATION_MODELS.test(modelWithoutQuota);
   const isClaudeModel = modelWithoutQuota.toLowerCase().includes("claude");
-  
-  // All models default to Antigravity quota unless cli_first is enabled
   // Fallback to antigravity-cli happens at the account rotation level when Antigravity is exhausted
-  const preferGeminiCli = options.cli_first === true && !isAntigravity && !isImageModel && !isClaudeModel;
-  const quotaPreference = preferGeminiCli ? "antigravity-cli" as const : "antigravity" as const;
+  const preferAntigravityCli = options.cli_first === true && !isAntigravity && !isImageModel && !isClaudeModel;
+  const quotaPreference = preferAntigravityCli ? "antigravity-cli" as const : "antigravity" as const;
   const explicitQuota = isAntigravity || isImageModel;
 
   const isGemini3 = modelWithoutQuota.toLowerCase().startsWith("gemini-3");
@@ -322,12 +320,12 @@ function budgetToGemini3Level(budget: number): "low" | "medium" | "high" {
 
 /**
  * Resolves model name for a specific headerStyle (quota fallback support).
- * Transforms model names when switching between gemini-cli and antigravity quotas.
+ * Transforms model names when switching between antigravity-cli and antigravity quotas.
  * 
  * Issue #103: When quota fallback occurs, model names need to be transformed:
- * - gemini-3-flash-preview (gemini-cli) → gemini-3-flash (antigravity)
- * - gemini-3-pro-preview (gemini-cli) → gemini-3-pro-low (antigravity)
- * - gemini-3-flash (antigravity) → gemini-3-flash-preview (gemini-cli)
+ * - gemini-3-flash-preview (antigravity-cli) → gemini-3-flash (antigravity)
+ * - gemini-3-pro-preview (antigravity-cli) → gemini-3-pro-low (antigravity)
+ * - gemini-3-flash (antigravity) → gemini-3-flash-preview (antigravity-cli)
  */
 export function resolveModelForHeaderStyle(
   requestedModel: string,
@@ -375,22 +373,7 @@ export function resolveModelForHeaderStyle(
     };
   }
 
-  if (headerStyle === "gemini-cli") {
-    let transformedModel = requestedModel
-      .replace(/^antigravity-/i, "")
-      .replace(/-(low|medium|high)$/i, "");
-
-    const hasPreviewSuffix = /-preview($|-)/i.test(transformedModel);
-    if (!hasPreviewSuffix) {
-      transformedModel = `${transformedModel}-preview`;
-    }
-    
-    return {
-      ...resolveModelWithTier(transformedModel),
-      quotaPreference: "gemini-cli",
-    };
-  }
-
+  
   return resolveModelWithTier(requestedModel);
 }
 

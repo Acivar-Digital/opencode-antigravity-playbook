@@ -1082,7 +1082,7 @@ const emptyResponseAttempts = new Map<string, number>();
  * Get rate limit backoff with time-window deduplication.
  * 
  * @param accountIndex - The account index
- * @param quotaKey - The quota key (e.g., "gemini-cli", "gemini-antigravity", "claude")
+ * @param quotaKey - The quota key (e.g., "antigravity-cli", "gemini-antigravity", "claude")
  * @param serverRetryAfterMs - Server-provided retry delay (if any)
  * @param maxBackoffMs - Maximum backoff delay in milliseconds (default 60000)
  * @returns { attempt, delayMs, isDuplicate } - isDuplicate=true if within dedup window
@@ -1148,7 +1148,7 @@ function resetAllRateLimitStateForAccount(accountIndex: number): void {
 
 function headerStyleToQuotaKey(headerStyle: HeaderStyle, family: ModelFamily): string {
   if (family === "claude") return "claude";
-  return headerStyle === "antigravity" ? "gemini-antigravity" : (headerStyle === "antigravity-cli" ? "antigravity-cli" : "gemini-cli");
+  return headerStyle === "antigravity" ? "gemini-antigravity" : "antigravity-cli";
 }
 
 // Track consecutive non-429 failures per account to prevent infinite loops
@@ -1574,7 +1574,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
 
             if (!account && allowQuotaFallback) {
               const alternateHeaderStyle: HeaderStyle =
-                preferredHeaderStyle === "antigravity" ? "gemini-cli" : "antigravity";
+                preferredHeaderStyle === "antigravity" ? "antigravity-cli" : "antigravity";
               account = accountManager.getCurrentOrNextForFamily(
                 family,
                 model,
@@ -1874,8 +1874,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
             
             // Determine header style from model suffix:
             // - Models with antigravity- prefix -> use Antigravity quota
-            // - Gemini models without explicit prefix -> follow cli_first
-            // - Claude models -> always use Antigravity
+                        // - Claude models -> always use Antigravity
             let headerStyle = preferredHeaderStyle;
             pushDebug(`headerStyle=${headerStyle} explicit=${explicitQuota}`);
             if (account.fingerprint) {
@@ -1884,7 +1883,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
             
             // Check if this header style is rate-limited for this account
             if (accountManager.isRateLimitedForHeaderStyle(account, family, headerStyle, model)) {
-              // Antigravity-first fallback: exhaust antigravity across ALL accounts before antigravity-cli/gemini-cli
+              // Antigravity-first fallback: exhaust antigravity across ALL accounts before antigravity-cli
               if (allowQuotaFallback && family === "gemini" && headerStyle === "antigravity") {
                 // Check if ANY other account has antigravity available
                 if (accountManager.hasOtherAccountWithAntigravityAvailable(account.index, family, model)) {
@@ -1892,7 +1891,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
                   pushDebug(`antigravity rate-limited on account ${account.index}, but available on other accounts. Switching.`);
                   shouldSwitchAccount = true;
                 } else {
-                  // All accounts exhausted antigravity - fall back to antigravity-cli/gemini-cli on this account
+                  // All accounts exhausted antigravity - fall back to antigravity-cli on this account
                   const alternateStyle = accountManager.getAvailableHeaderStyle(account, family, model);
                   const fallbackStyle = resolveQuotaFallbackHeaderStyle({
                     family,
@@ -1919,8 +1918,8 @@ export const createAntigravityPlugin = (providerId: string) => async (
                   alternateStyle,
                 });
                 if (fallbackStyle) {
-                  const quotaName = headerStyle === "antigravity-cli" ? "Antigravity CLI" : (headerStyle === "gemini-cli" ? "Gemini CLI" : "Antigravity");
-                  const altQuotaName = fallbackStyle === "antigravity-cli" ? "Antigravity CLI" : (fallbackStyle === "gemini-cli" ? "Gemini CLI" : "Antigravity");
+                  const quotaName = headerStyle === "antigravity-cli" ? "Antigravity CLI" : "Antigravity";
+                  const altQuotaName = fallbackStyle === "antigravity-cli" ? "Antigravity CLI" : "Antigravity";
                   await showToast(
                     `${quotaName} quota exhausted, using ${altQuotaName} quota`,
                     "warning"
@@ -1956,9 +1955,9 @@ export const createAntigravityPlugin = (providerId: string) => async (
 
               const currentEndpoint = ANTIGRAVITY_ENDPOINT_FALLBACKS[i];
 
-              // Skip sandbox endpoints for Gemini CLI/Antigravity CLI models - they only work with Antigravity quota
-              // Gemini CLI/Antigravity CLI models must use production endpoint (cloudcode-pa.googleapis.com)
-              if ((headerStyle === "gemini-cli" || headerStyle === "antigravity-cli") && currentEndpoint !== ANTIGRAVITY_ENDPOINT_PROD) {
+              // Skip sandbox endpoints for Antigravity CLI models - they only work with Antigravity quota
+              // Antigravity CLI models must use production endpoint (cloudcode-pa.googleapis.com)
+              if (headerStyle === "antigravity-cli" && currentEndpoint !== ANTIGRAVITY_ENDPOINT_PROD) {
                 pushDebug(`Skipping sandbox endpoint ${currentEndpoint} for ${headerStyle} headerStyle`);
                 continue;
               }
@@ -2175,7 +2174,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
                       }
 
                       // All accounts exhausted for Antigravity on THIS model.
-                      // Before falling back to antigravity-cli/gemini-cli, check if it's the last option (automatic fallback)
+                      // Before falling back to antigravity-cli, check if it's the last option (automatic fallback)
                       if (allowQuotaFallback) {
                         const alternateStyle = accountManager.getAvailableHeaderStyle(account, family, model);
                         const fallbackStyle = resolveQuotaFallbackHeaderStyle({
@@ -2185,7 +2184,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
                         });
                         if (fallbackStyle) {
                           const safeModelName = model || "this model";
-                          const fallbackName = fallbackStyle === "antigravity-cli" ? "Antigravity CLI" : "Gemini CLI";
+                          const fallbackName = "Antigravity CLI";
                           await showToast(
                             `Antigravity quota exhausted for ${safeModelName}. Switching to ${fallbackName} quota...`,
                             "warning"
@@ -2195,7 +2194,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
                           continue;
                         }
                       }
-                    } else if (headerStyle === "antigravity-cli" || headerStyle === "gemini-cli") {
+                    } else if (headerStyle === "antigravity-cli") {
                       if (allowQuotaFallback) {
                         const alternateStyle = accountManager.getAvailableHeaderStyle(account, family, model);
                         const fallbackStyle = resolveQuotaFallbackHeaderStyle({
@@ -2205,8 +2204,8 @@ export const createAntigravityPlugin = (providerId: string) => async (
                         });
                         if (fallbackStyle) {
                           const safeModelName = model || "this model";
-                          const currentName = headerStyle === "antigravity-cli" ? "Antigravity CLI" : "Gemini CLI";
-                          const fallbackName = fallbackStyle === "antigravity" ? "Antigravity" : (fallbackStyle === "antigravity-cli" ? "Antigravity CLI" : "Gemini CLI");
+                          const currentName = "Antigravity CLI";
+                          const fallbackName = fallbackStyle === "antigravity" ? "Antigravity" : "Antigravity CLI";
                           await showToast(
                             `${currentName} quota exhausted for ${safeModelName}. Switching to ${fallbackName} quota...`,
                             "warning"
@@ -2219,7 +2218,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
                     }
                   }
 
-                  const quotaName = headerStyle === "antigravity" ? "Antigravity" : (headerStyle === "antigravity-cli" ? "Antigravity CLI" : "Gemini CLI");
+                  const quotaName = headerStyle === "antigravity" ? "Antigravity" : "Antigravity CLI";
 
                   if (accountCount > 1) {
                     const quotaMsg = bodyInfo.quotaResetTime 
@@ -3400,7 +3399,7 @@ function resolveHeaderRoutingDecision(
 }
 
 function getCliFirst(config: AntigravityConfig): boolean {
-  return (config as AntigravityConfig & { cli_first?: boolean }).cli_first ?? false;
+  return false;
 }
 
 function getHeaderStyleFromUrl(
@@ -3413,9 +3412,9 @@ function getHeaderStyleFromUrl(
   }
   const modelWithSuffix = extractModelFromUrlWithSuffix(urlString);
   if (!modelWithSuffix) {
-    return cliFirst ? "gemini-cli" : "antigravity";
+    return cliFirst ? "antigravity-cli" : "antigravity";
   }
-  const { quotaPreference } = resolveModelWithTier(modelWithSuffix, { cli_first: cliFirst });
+  const { quotaPreference } = resolveModelWithTier(modelWithSuffix, {});
   return quotaPreference ?? "antigravity";
 }
 

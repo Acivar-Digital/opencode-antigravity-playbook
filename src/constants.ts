@@ -59,11 +59,10 @@ export const ANTIGRAVITY_LOAD_ENDPOINTS = [
 export const ANTIGRAVITY_ENDPOINT = ANTIGRAVITY_ENDPOINT_DAILY;
 
 /**
- * Gemini CLI endpoint (production).
+ * Antigravity CLI endpoint (production).
  * Used for models without :antigravity suffix.
  * Same as opencode-gemini-auth's GEMINI_CODE_ASSIST_ENDPOINT.
  */
-export const GEMINI_CLI_ENDPOINT = ANTIGRAVITY_ENDPOINT_PROD;
 export const ANTIGRAVITY_CLI_ENDPOINT = ANTIGRAVITY_ENDPOINT_PROD;
 
 /**
@@ -118,11 +117,6 @@ export const ANTIGRAVITY_CLI_HEADERS = {
   })
 } as const;
 
-export const GEMINI_CLI_HEADERS = {
-  "User-Agent": "google-api-nodejs-client/9.15.1",
-  "X-Goog-Api-Client": "gl-node/22.17.0",
-  "Client-Metadata": "ideType=IDE_UNSPECIFIED,platform=PLATFORM_UNSPECIFIED,pluginType=GEMINI",
-} as const;
 
 const ANTIGRAVITY_PLATFORMS = ["windows/amd64", "darwin/arm64", "darwin/amd64"] as const;
 
@@ -149,13 +143,6 @@ export function getRandomizedHeaders(style: HeaderStyle, model?: string): Header
       "Client-Metadata": ANTIGRAVITY_CLI_HEADERS["Client-Metadata"],
     };
   }
-  if (style === "gemini-cli") {
-    return {
-      "User-Agent": GEMINI_CLI_HEADERS["User-Agent"],
-      "X-Goog-Api-Client": GEMINI_CLI_HEADERS["X-Goog-Api-Client"],
-      "Client-Metadata": GEMINI_CLI_HEADERS["Client-Metadata"],
-    };
-  }
   const platform = randomFrom(ANTIGRAVITY_PLATFORMS);
   const metadataPlatform = platform.startsWith("windows") ? "WINDOWS" : "MACOS";
   return {
@@ -165,7 +152,7 @@ export function getRandomizedHeaders(style: HeaderStyle, model?: string): Header
   };
 }
 
-export type HeaderStyle = "antigravity" | "gemini-cli" | "antigravity-cli";
+export type HeaderStyle = "antigravity" | "antigravity-cli";
 
 /**
  * Provider identifier shared between the plugin loader and credential store.
@@ -213,7 +200,6 @@ export const EMPTY_SCHEMA_PLACEHOLDER_DESCRIPTION = "Placeholder. Always pass tr
  * validation instead of failing with "Invalid signature in thinking block".
  * 
  * This is an officially supported Google API feature, used by:
- * - gemini-cli: https://github.com/google-gemini/gemini-cli
  * - Google .NET SDK: PredictionServiceChatClient.cs
  * 
  * @see https://ai.google.dev/gemini-api/docs/thought-signatures

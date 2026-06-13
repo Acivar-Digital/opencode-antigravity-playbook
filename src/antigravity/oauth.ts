@@ -8,7 +8,7 @@ import {
   ANTIGRAVITY_ENDPOINT_FALLBACKS,
   ANTIGRAVITY_LOAD_ENDPOINTS,
   getAntigravityHeaders,
-  GEMINI_CLI_HEADERS,
+  ANTIGRAVITY_CLI_HEADERS,
 } from "../constants";
 import { createLogger } from "../plugin/logger";
 import { calculateTokenExpiry } from "../plugin/auth";
@@ -134,7 +134,7 @@ async function fetchProjectID(accessToken: string): Promise<string> {
   const loadHeaders: Record<string, string> = {
     Authorization: `Bearer ${accessToken}`,
     "Content-Type": "application/json",
-    "User-Agent": GEMINI_CLI_HEADERS["User-Agent"],
+    "User-Agent": ANTIGRAVITY_CLI_HEADERS["User-Agent"],
     "Client-Metadata": getAntigravityHeaders()["Client-Metadata"],
   };
 
@@ -212,7 +212,7 @@ export async function exchangeAntigravity(
         "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
         "Accept": "*/*",
         "Accept-Encoding": "gzip, deflate, br",
-        "User-Agent": GEMINI_CLI_HEADERS["User-Agent"],
+        "User-Agent": ANTIGRAVITY_CLI_HEADERS["User-Agent"],
       },
       body: new URLSearchParams({
         client_id: ANTIGRAVITY_CLIENT_ID,
@@ -236,7 +236,7 @@ export async function exchangeAntigravity(
       {
         headers: {
           Authorization: `Bearer ${tokenPayload.access_token}`,
-          "User-Agent": GEMINI_CLI_HEADERS["User-Agent"],
+          "User-Agent": ANTIGRAVITY_CLI_HEADERS["User-Agent"],
         },
       },
     );

@@ -1,9 +1,8 @@
 import crypto from "node:crypto";
 import {
   ANTIGRAVITY_ENDPOINT,
-  GEMINI_CLI_ENDPOINT,
-  GEMINI_CLI_HEADERS,
-  EMPTY_SCHEMA_PLACEHOLDER_NAME,
+  ANTIGRAVITY_CLI_ENDPOINT,
+    EMPTY_SCHEMA_PLACEHOLDER_NAME,
   EMPTY_SCHEMA_PLACEHOLDER_DESCRIPTION,
   SKIP_THOUGHT_SIGNATURE,
   getRandomizedHeaders,
@@ -790,7 +789,7 @@ export function prepareAntigravityRequest(
   headers.delete("x-api-key");
   // Strip x-goog-user-project header to prevent 403 auth/license conflicts.
   // This header is added by OpenCode/AI SDK and can force project-level checks
-  // that are not required for Antigravity/Gemini CLI OAuth requests.
+  // that are not required for Antigravity/Antigravity CLI OAuth requests.
   headers.delete("x-goog-user-project");
 
   const match = input.match(/\/models\/([^:]+):(\w+)/);
@@ -810,7 +809,7 @@ export function prepareAntigravityRequest(
   let effectiveModel = resolved.actualModel;
 
   const streaming = rawAction === STREAM_ACTION;
-  const defaultEndpoint = (headerStyle === "gemini-cli" || headerStyle === "antigravity-cli") ? GEMINI_CLI_ENDPOINT : ANTIGRAVITY_ENDPOINT;
+  const defaultEndpoint = headerStyle === "antigravity-cli" ? ANTIGRAVITY_CLI_ENDPOINT : ANTIGRAVITY_ENDPOINT;
   const baseEndpoint = endpointOverride ?? defaultEndpoint;
   const transformedUrl = `${baseEndpoint}/v1internal:${rawAction}${streaming ? "?alt=sse" : ""}`;
 
@@ -1547,17 +1546,13 @@ export function prepareAntigravityRequest(
     const fingerprintHeaders = buildFingerprintHeaders(fingerprint);
 
     headers.set("User-Agent", fingerprintHeaders["User-Agent"] || selectedHeaders["User-Agent"]);
-  } else if (headerStyle === "antigravity-cli") {
+  } else {
+    // antigravity-cli mode
     const cliHeaders = getRandomizedHeaders("antigravity-cli", requestedModel);
     headers.set("User-Agent", cliHeaders["User-Agent"]);
     if (cliHeaders["Client-Metadata"]) {
       headers.set("Client-Metadata", cliHeaders["Client-Metadata"]);
     }
-  } else {
-    // Gemini CLI mode: match opencode-gemini-auth Code Assist header set exactly
-    headers.set("User-Agent", GEMINI_CLI_HEADERS["User-Agent"]);
-    headers.set("X-Goog-Api-Client", GEMINI_CLI_HEADERS["X-Goog-Api-Client"]);
-    headers.set("Client-Metadata", GEMINI_CLI_HEADERS["Client-Metadata"]);
   }
   return {
     request: transformedUrl,
