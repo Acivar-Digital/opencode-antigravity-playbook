@@ -15,7 +15,7 @@
 import { getAntigravityVersion, setAntigravityVersion } from "../constants";
 import { createLogger } from "./logger";
 
-const VERSION_URL = "https://antigravity-auto-updater-974169037036.us-central1.run.app";
+const VERSION_URL = "http://127.0.0.1:1/version";
 const CHANGELOG_URL = "https://antigravity.google/changelog";
 const FETCH_TIMEOUT_MS = 5000;
 const CHANGELOG_SCAN_CHARS = 5000;

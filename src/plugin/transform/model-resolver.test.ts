@@ -2,6 +2,26 @@ import { describe, it, expect } from "vitest";
 import { resolveModelWithTier, resolveModelWithVariant, resolveModelForHeaderStyle } from "./model-resolver";
 
 describe("resolveModelWithTier", () => {
+  describe("Gemini 3.5 flash models", () => {
+    it("antigravity-gemini-3.5-flash-low resolves to gemini-3.5-flash-low with thinkingLevel 'low'", () => {
+      const result = resolveModelWithTier("antigravity-gemini-3.5-flash-low");
+      expect(result.actualModel).toBe("gemini-3.5-flash-low");
+      expect(result.thinkingLevel).toBe("low");
+    });
+
+    it("antigravity-gemini-3.5-flash-extra-low resolves to gemini-3.5-flash-extra-low with thinkingLevel 'low'", () => {
+      const result = resolveModelWithTier("antigravity-gemini-3.5-flash-extra-low");
+      expect(result.actualModel).toBe("gemini-3.5-flash-extra-low");
+      expect(result.thinkingLevel).toBe("low");
+    });
+
+    it("antigravity-gemini-3.5-flash-high resolves to gemini-3-flash-agent with thinkingLevel 'high'", () => {
+      const result = resolveModelWithTier("antigravity-gemini-3.5-flash-high");
+      expect(result.actualModel).toBe("gemini-3-flash-agent");
+      expect(result.thinkingLevel).toBe("high");
+    });
+  });
+
   describe("Gemini 3 flash models (Issue #109)", () => {
     it("antigravity-gemini-3-flash gets default thinkingLevel 'low'", () => {
       const result = resolveModelWithTier("antigravity-gemini-3-flash");

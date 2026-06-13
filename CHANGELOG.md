@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- **Version Patch** - Override Antigravity User-Agent version fallback to `4.2.1` and bypass updater API to prevent "version no longer supported" errors.
+
 - **#397** - Gemini tool-call payload handling now enforces valid `thought_signature` behavior for `functionCall` parts, preventing `400 INVALID_ARGUMENT` in mixed and parallel call turns.
 
 - **#454** - Request sanitization now removes empty/invalid `contents.parts` entries and invalid `systemInstruction.parts` before forwarding to Antigravity.
@@ -11,6 +13,10 @@
 - **#444** - Response transform fallback now uses cloned responses and preserves recovery signaling, eliminating `Body already used` failures.
 
 - **#368 (Tackled)** - Claude thinking/signature handling now replaces foreign signatures with sentinels and tightens thinking-order classification to reduce false-positive recovery triggers.
+
+### Added
+
+- **Gemini 3.5 Flash Model Support** - Added model definitions and resolution mapping for `antigravity-gemini-3.5-flash-low`, `extra-low`, and `high` model variants.
 
 ### Changed
 

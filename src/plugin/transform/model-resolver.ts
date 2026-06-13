@@ -63,6 +63,22 @@ const TIER_REGEX = /-(minimal|low|medium|high)$/;
 const QUOTA_PREFIX_REGEX = /^antigravity-/i;
 const GEMINI_3_PRO_REGEX = /^gemini-3(?:\.\d+)?-pro/i;
 const GEMINI_3_FLASH_REGEX = /^gemini-3(?:\.\d+)?-flash/i;
+const GEMINI_35_FLASH_REGEX = /^gemini-3\.5-flash/i;
+const GEMINI_35_FLASH_EXTRA_LOW_MODEL = "gemini-3.5-flash-extra-low";
+const GEMINI_35_FLASH_LOW_MODEL = "gemini-3.5-flash-low";
+const GEMINI_35_FLASH_HIGH_MODEL = "gemini-3-flash-agent";
+
+function isGemini35FlashModel(model: string): boolean {
+  return GEMINI_35_FLASH_REGEX.test(model);
+}
+
+export function resolveAntigravityGemini35FlashBackendModel(model: string, thinkingLevel?: string): string | undefined {
+  const modelWithoutQuota = model.replace(QUOTA_PREFIX_REGEX, "");
+  if (!modelWithoutQuota.match(GEMINI_35_FLASH_REGEX)) return undefined;
+  if (modelWithoutQuota.endsWith("-extra-low")) return GEMINI_35_FLASH_EXTRA_LOW_MODEL;
+  const level = (thinkingLevel ?? "low").toLowerCase();
+  return level === "high" ? GEMINI_35_FLASH_HIGH_MODEL : GEMINI_35_FLASH_LOW_MODEL;
+}
 
 // ANTIGRAVITY_ONLY_MODELS removed - all models now default to antigravity
 
@@ -94,7 +110,7 @@ function supportsThinkingTiers(model: string): boolean {
  */
 function extractThinkingTierFromModel(model: string): ThinkingTier | undefined {
   // Only extract tier for models that support thinking tiers
-  if (!supportsThinkingTiers(model)) {
+  if (!supportsThinkingTiers(model) || model.toLowerCase().endsWith("-extra-low")) {
     return undefined;
   }
   const tierMatch = model.match(TIER_REGEX);
@@ -182,10 +198,13 @@ export function resolveModelWithTier(requestedModel: string, options: ModelResol
   // Pro defaults to -low unless an explicit tier is provided
   const isGemini3Pro = isGemini3ProModel(modelWithoutQuota);
   const isGemini3Flash = isGemini3FlashModel(modelWithoutQuota);
+  const isGemini35Flash = isGemini35FlashModel(modelWithoutQuota);
   
   let antigravityModel = modelWithoutQuota;
   if (skipAlias) {
-    if (isGemini3Pro && !tier && !isImageModel) {
+    if (isGemini35Flash) {
+      antigravityModel = resolveAntigravityGemini35FlashBackendModel(modelWithoutQuota, tier) ?? `${baseName}-low`;
+    } else if (isGemini3Pro && !tier && !isImageModel) {
       antigravityModel = `${modelWithoutQuota}-low`;
     } else if (isGemini3Flash && tier) {
       antigravityModel = baseName;
@@ -242,9 +261,11 @@ export function resolveModelWithTier(requestedModel: string, options: ModelResol
 
   // Gemini 3 models with tier always get thinkingLevel set
   if (isEffectiveGemini3) {
+    const isGemini35Flash = resolvedModel.toLowerCase().startsWith("gemini-3.5-flash");
+    const thinkingLevel = isGemini35Flash ? "low" as const : tier;
     return {
       actualModel: resolvedModel,
-      thinkingLevel: tier,
+      thinkingLevel,
       tier,
       isThinkingModel: true,
       quotaPreference,
