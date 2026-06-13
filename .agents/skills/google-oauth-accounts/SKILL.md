@@ -563,6 +563,124 @@ Fix:
    ```
    Also verify `account_selection_strategy` is set in `antigravity.json` (not null/missing). Without a strategy, the plugin defaults to `sticky` and will keep retrying the same account.
 
+### Stubborn accounts that keep reverting (verification-required / re-enabled after delete)
+
+**Symptom:** An account you deleted keeps coming back, or an account you re-enabled keeps flipping back to `enabled: false` / `verificationRequired: true` after every save, even after WSL/OpenCode restarts.
+
+**Root cause:** The plugin has a background quota-refresh loop that calls `verifyAccountAccess()` on every account. When Google returns a `blocked` response (e.g. `validation_required`), the plugin calls `markStoredAccountVerificationRequired()` and `markAccountVerificationRequired()`, which set `enabled: false` and `verificationRequired: true` in both the in-memory state and on disk — overwriting any manual edits. For deleted accounts, `saveAccounts()` uses a merge-on-save strategy that pulls in-memory state back into the file.
+
+**Why manual file edits fail while OpenCode is running:** The plugin holds the account state in memory. Any file edit you make gets overwritten within ~20 seconds by the background loop. Even atomic temp-file writes lose the race because the plugin's in-memory state wins on merge.
+
+**The correct fix: patch the plugin source files.** There are three functions to patch in the cache copy (the one OpenCode actually runs from):
+
+```
+~/.cache/opencode/packages/opencode-antigravity-auth@latest/node_modules/opencode-antigravity-auth/dist/src/plugin/storage.js
+~/.cache/opencode/packages/opencode-antigravity-auth@latest/node_modules/opencode-antigravity-auth/dist/src/plugin.js
+~/.cache/opencode/packages/opencode-antigravity-auth@latest/node_modules/opencode-antigravity-auth/dist/src/plugin/accounts.js
+```
+
+Also patch the repo copies in `/home/yapilwsl/arthityap/ocagvrotate/dist/src/plugin/` so the fix survives a `cp -r dist/` deploy.
+
+#### Step 1 — Patch `storage.js`: filter on every write
+
+In `saveAccounts` and `saveAccountsReplace`, add at the very top of the function body:
+
+```js
+export async function saveAccounts(storage) {
+    // PATCH: strip banned accounts, force-enable specific accounts on every write
+    const BANNED_EMAILS = ["tran.tran5990@gmail.com"];         // accounts to permanently delete
+    const FORCE_ENABLED = ["emilywonderme@gmail.com"];         // accounts to keep enabled despite verificationRequired
+    storage = {
+        ...storage,
+        accounts: storage.accounts
+            .filter(a => !BANNED_EMAILS.includes(a.email))
+            .map(a => FORCE_ENABLED.includes(a.email)
+                ? { ...a, enabled: true, coolingDownUntil: null, cooldownReason: null,
+                    verificationRequired: null, verificationRequiredAt: null,
+                    verificationRequiredReason: null, verificationUrl: null }
+                : a)
+    };
+    // ... rest of original function
+```
+
+Apply the same patch to `saveAccountsReplace`.
+
+#### Step 2 — Patch `plugin.js`: block the quota loop from re-disabling
+
+In `markStoredAccountVerificationRequired`, add an early return at the top:
+
+```js
+function markStoredAccountVerificationRequired(account, reason, verifyUrl) {
+    // PATCH: skip force-enabled accounts
+    const FORCE_ENABLED = ["emilywonderme@gmail.com"];
+    if (account.email && FORCE_ENABLED.includes(account.email)) { return false; }
+    // ... rest of original function
+```
+
+#### Step 3 — Patch `accounts.js`: block the in-memory manager from re-disabling
+
+In `markAccountVerificationRequired`, add an early return:
+
+```js
+markAccountVerificationRequired(accountIndex, reason, verifyUrl) {
+    const account = this.accounts[accountIndex];
+    if (!account) { return false; }
+    // PATCH: skip force-enabled accounts
+    const FORCE_ENABLED = ["emilywonderme@gmail.com"];
+    if (account.email && FORCE_ENABLED.includes(account.email)) { return false; }
+    // ... rest of original function
+```
+
+#### Step 4 — Write the clean file and restart OpenCode
+
+After patching all three files, write the accounts file with the correct state, then restart:
+
+```bash
+python3 << 'EOF'
+import json, time, os
+path = os.path.expanduser('~/.config/opencode/antigravity-accounts.json')
+with open(path) as f:
+    data = json.load(f)
+# Remove banned accounts
+data['accounts'] = [a for a in data['accounts'] if a['email'] != 'tran.tran5990@gmail.com']
+# Re-enable stubborn accounts
+for a in data['accounts']:
+    if a['email'] == 'emilywonderme@gmail.com':
+        a['enabled'] = True
+        a['coolingDownUntil'] = None
+        a['cooldownReason'] = None
+        a['verificationRequired'] = None
+        a['verificationRequiredAt'] = None
+        a['verificationRequiredReason'] = None
+        a['verificationUrl'] = None
+# Fix out-of-range indices
+n = len(data['accounts'])
+if data.get('activeIndex', 0) >= n: data['activeIndex'] = 0
+for fam in ['claude', 'gemini']:
+    if data.get('activeIndexByFamily', {}).get(fam, 0) >= n:
+        data['activeIndexByFamily'][fam] = 0
+with open(path, 'w') as f:
+    json.dump(data, f, indent=2)
+os.chmod(path, 0o600)
+print('Done:', [a['email'] for a in data['accounts']])
+EOF
+```
+
+Then restart WSL/OpenCode. On the next startup, OpenCode loads the clean file, and all three patches block the quota loop from re-disabling or re-adding the accounts.
+
+#### Verify patches are in place
+
+```bash
+grep -c "PATCH: strip banned\|PATCH: skip force" \
+  ~/.cache/opencode/packages/opencode-antigravity-auth@latest/node_modules/opencode-antigravity-auth/dist/src/plugin/storage.js \
+  ~/.cache/opencode/packages/opencode-antigravity-auth@latest/node_modules/opencode-antigravity-auth/dist/src/plugin.js \
+  ~/.cache/opencode/packages/opencode-antigravity-auth@latest/node_modules/opencode-antigravity-auth/dist/src/plugin/accounts.js
+```
+
+Each file should show at least 1 match. If any show 0, re-apply the patch to that file.
+
+**Note:** These patches are lost when the plugin is updated (npm re-extracts the cache). After any `opencode-antigravity-auth` update, re-apply all three patches. The repo copies (`/home/yapilwsl/arthityap/ocagvrotate/dist/src/plugin/`) serve as the reference — use `cp -r dist/ package.json` to re-deploy to cache.
+
 ### Infinite `.tmp` files
 
 1. Stop OpenCode.
