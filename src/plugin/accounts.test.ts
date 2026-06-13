@@ -314,7 +314,7 @@ describe("AccountManager", () => {
       expect(manager.getAvailableHeaderStyle(account!, "gemini")).toBe("antigravity");
     });
 
-    it("getAvailableHeaderStyle returns gemini-cli when antigravity is rate-limited", () => {
+    it("getAvailableHeaderStyle returns antigravity-cli when antigravity is rate-limited", () => {
       const stored: AccountStorageV4 = {
         version: 4,
         accounts: [
@@ -328,10 +328,10 @@ describe("AccountManager", () => {
 
       manager.markRateLimited(account!, 60000, "gemini", "antigravity");
 
-      expect(manager.getAvailableHeaderStyle(account!, "gemini")).toBe("gemini-cli");
+      expect(manager.getAvailableHeaderStyle(account!, "gemini")).toBe("antigravity-cli");
     });
 
-    it("getAvailableHeaderStyle returns null when both header styles are rate-limited", () => {
+    it("getAvailableHeaderStyle returns null when all header styles are rate-limited", () => {
       const stored: AccountStorageV4 = {
         version: 4,
         accounts: [
@@ -344,6 +344,7 @@ describe("AccountManager", () => {
       const account = manager.getCurrentOrNextForFamily("gemini");
 
       manager.markRateLimited(account!, 60000, "gemini", "antigravity");
+      manager.markRateLimited(account!, 60000, "gemini", "antigravity-cli");
       manager.markRateLimited(account!, 60000, "gemini", "gemini-cli");
 
       expect(manager.getAvailableHeaderStyle(account!, "gemini")).toBeNull();
@@ -407,7 +408,7 @@ describe("AccountManager", () => {
       expect(manager.getAvailableHeaderStyle(account!, "gemini")).toBe("antigravity");
     });
 
-    it("getMinWaitTimeForFamily considers both Gemini header styles", () => {
+    it("getMinWaitTimeForFamily considers all Gemini header styles", () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date(0));
 
@@ -426,6 +427,7 @@ describe("AccountManager", () => {
 
       expect(manager.getMinWaitTimeForFamily("gemini")).toBe(0);
 
+      manager.markRateLimited(account!, 60000, "gemini", "antigravity-cli");
       manager.markRateLimited(account!, 60000, "gemini", "gemini-cli");
 
       expect(manager.getMinWaitTimeForFamily("gemini")).toBe(30000);
@@ -1331,7 +1333,7 @@ describe("AccountManager", () => {
         const stored: AccountStorageV4 = {
           version: 4,
           accounts: [
-            { refreshToken: "r1", projectId: "p1", addedAt: 1, lastUsed: 0, rateLimitResetTimes: { "gemini-antigravity": 11_500, "gemini-cli": 11_500 } },
+            { refreshToken: "r1", projectId: "p1", addedAt: 1, lastUsed: 0, rateLimitResetTimes: { "gemini-antigravity": 11_500, "antigravity-cli": 11_500, "gemini-cli": 11_500 } },
           ],
           activeIndex: 0,
         };
@@ -1349,7 +1351,7 @@ describe("AccountManager", () => {
         const stored: AccountStorageV4 = {
           version: 4,
           accounts: [
-            { refreshToken: "r1", projectId: "p1", addedAt: 1, lastUsed: 0, rateLimitResetTimes: { "gemini-antigravity": 15_000, "gemini-cli": 15_000 } },
+            { refreshToken: "r1", projectId: "p1", addedAt: 1, lastUsed: 0, rateLimitResetTimes: { "gemini-antigravity": 15_000, "antigravity-cli": 15_000, "gemini-cli": 15_000 } },
           ],
           activeIndex: 0,
         };
@@ -1380,7 +1382,7 @@ describe("AccountManager", () => {
         const stored: AccountStorageV4 = {
           version: 4,
           accounts: [
-            { refreshToken: "r1", projectId: "p1", addedAt: 1, lastUsed: 0, rateLimitResetTimes: { "gemini-antigravity": 70_000, "gemini-cli": 80_000 } },
+            { refreshToken: "r1", projectId: "p1", addedAt: 1, lastUsed: 0, rateLimitResetTimes: { "gemini-antigravity": 70_000, "antigravity-cli": 80_000, "gemini-cli": 80_000 } },
             { refreshToken: "r2", projectId: "p2", addedAt: 2, lastUsed: 0, rateLimitResetTimes: { "gemini-antigravity": 90_000 } },
           ],
           activeIndex: 0,
@@ -1394,6 +1396,7 @@ describe("AccountManager", () => {
         manager.clearAllRateLimitsForFamily("gemini");
 
         expect(accounts[0]!.rateLimitResetTimes["gemini-antigravity"]).toBeUndefined();
+        expect(accounts[0]!.rateLimitResetTimes["antigravity-cli"]).toBeUndefined();
         expect(accounts[0]!.rateLimitResetTimes["gemini-cli"]).toBeUndefined();
         expect(accounts[1]!.rateLimitResetTimes["gemini-antigravity"]).toBeUndefined();
         expect(accounts[0]!.consecutiveFailures).toBe(0);

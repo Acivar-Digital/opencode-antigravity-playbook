@@ -1,34 +1,48 @@
 import { describe, it, expect } from "vitest"
 import {
-  GEMINI_CLI_HEADERS,
+  ANTIGRAVITY_CLI_HEADERS,
   getRandomizedHeaders,
   type HeaderSet,
 } from "./constants.ts"
 
-describe("GEMINI_CLI_HEADERS", () => {
-  it("matches Code Assist headers from opencode-gemini-auth", () => {
-    expect(GEMINI_CLI_HEADERS).toEqual({
-      "User-Agent": "google-api-nodejs-client/9.15.1",
-      "X-Goog-Api-Client": "gl-node/22.17.0",
-      "Client-Metadata": "ideType=IDE_UNSPECIFIED,platform=PLATFORM_UNSPECIFIED,pluginType=GEMINI",
+describe("ANTIGRAVITY_CLI_HEADERS", () => {
+  it("matches Go-based antigravity-cli headers", () => {
+    const os = process.platform === "win32" ? "windows" : process.platform;
+    const arch = process.arch === "x64" ? "amd64" : process.arch;
+    const metadataPlatform = os === "windows" ? "WINDOWS" : "MACOS";
+
+    expect(ANTIGRAVITY_CLI_HEADERS["User-Agent"]).toBe(`antigravity/cli/1.0.1 ${os}/${arch}`)
+    expect(ANTIGRAVITY_CLI_HEADERS["X-Goog-Api-Client"]).toBeUndefined()
+    expect(JSON.parse(ANTIGRAVITY_CLI_HEADERS["Client-Metadata"]!)).toEqual({
+      ideType: "ANTIGRAVITY_CLI",
+      platform: metadataPlatform,
+      pluginType: "NONE",
     })
   })
 })
 
 describe("getRandomizedHeaders", () => {
-  describe("gemini-cli style", () => {
-    it("returns static Code Assist headers", () => {
-      const headers = getRandomizedHeaders("gemini-cli", "gemini-2.5-pro")
-      expect(headers).toEqual({
-        "User-Agent": "google-api-nodejs-client/9.15.1",
-        "X-Goog-Api-Client": "gl-node/22.17.0",
-        "Client-Metadata": "ideType=IDE_UNSPECIFIED,platform=PLATFORM_UNSPECIFIED,pluginType=GEMINI",
+  describe("antigravity-cli style", () => {
+    it("returns static antigravity-cli headers", () => {
+      const headers = getRandomizedHeaders("antigravity-cli", "gemini-2.5-pro")
+      const os = process.platform === "win32" ? "windows" : process.platform;
+      const arch = process.arch === "x64" ? "amd64" : process.arch;
+      const metadataPlatform = os === "windows" ? "WINDOWS" : "MACOS";
+
+      expect(headers["User-Agent"]).toBe(`antigravity/cli/1.0.1 ${os}/${arch}`)
+      expect(headers["X-Goog-Api-Client"]).toBeUndefined()
+      expect(JSON.parse(headers["Client-Metadata"]!)).toEqual({
+        ideType: "ANTIGRAVITY_CLI",
+        platform: metadataPlatform,
+        pluginType: "NONE",
       })
     })
 
     it("ignores requested model and keeps static User-Agent", () => {
-      const headers = getRandomizedHeaders("gemini-cli", "gemini-3-pro-preview")
-      expect(headers["User-Agent"]).toBe("google-api-nodejs-client/9.15.1")
+      const headers = getRandomizedHeaders("antigravity-cli", "gemini-3-pro-preview")
+      const os = process.platform === "win32" ? "windows" : process.platform;
+      const arch = process.arch === "x64" ? "amd64" : process.arch;
+      expect(headers["User-Agent"]).toBe(`antigravity/cli/1.0.1 ${os}/${arch}`)
     })
   })
 

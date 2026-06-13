@@ -6,6 +6,7 @@
  */
 
 import type { ResolvedModel, ThinkingTier, GoogleSearchConfig } from "./types";
+import type { HeaderStyle } from "../../constants";
 
 export interface ModelResolverOptions {
   cli_first?: boolean;
@@ -184,9 +185,9 @@ export function resolveModelWithTier(requestedModel: string, options: ModelResol
   const isClaudeModel = modelWithoutQuota.toLowerCase().includes("claude");
   
   // All models default to Antigravity quota unless cli_first is enabled
-  // Fallback to gemini-cli happens at the account rotation level when Antigravity is exhausted
+  // Fallback to antigravity-cli happens at the account rotation level when Antigravity is exhausted
   const preferGeminiCli = options.cli_first === true && !isAntigravity && !isImageModel && !isClaudeModel;
-  const quotaPreference = preferGeminiCli ? "gemini-cli" as const : "antigravity" as const;
+  const quotaPreference = preferGeminiCli ? "antigravity-cli" as const : "antigravity" as const;
   const explicitQuota = isAntigravity || isImageModel;
 
   const isGemini3 = modelWithoutQuota.toLowerCase().startsWith("gemini-3");
@@ -330,7 +331,7 @@ function budgetToGemini3Level(budget: number): "low" | "medium" | "high" {
  */
 export function resolveModelForHeaderStyle(
   requestedModel: string,
-  headerStyle: "antigravity" | "gemini-cli"
+  headerStyle: HeaderStyle
 ): ResolvedModel {
   const lower = requestedModel.toLowerCase();
   const isGemini3 = lower.includes("gemini-3");
@@ -358,6 +359,22 @@ export function resolveModelForHeaderStyle(
     return resolveModelWithTier(prefixedModel);
   }
   
+  if (headerStyle === "antigravity-cli") {
+    let transformedModel = requestedModel
+      .replace(/^antigravity-/i, "")
+      .replace(/-(low|medium|high)$/i, "");
+
+    const hasPreviewSuffix = /-preview($|-)/i.test(transformedModel);
+    if (!hasPreviewSuffix) {
+      transformedModel = `${transformedModel}-preview`;
+    }
+    
+    return {
+      ...resolveModelWithTier(transformedModel),
+      quotaPreference: "antigravity-cli",
+    };
+  }
+
   if (headerStyle === "gemini-cli") {
     let transformedModel = requestedModel
       .replace(/^antigravity-/i, "")

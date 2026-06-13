@@ -64,6 +64,7 @@ export const ANTIGRAVITY_ENDPOINT = ANTIGRAVITY_ENDPOINT_DAILY;
  * Same as opencode-gemini-auth's GEMINI_CODE_ASSIST_ENDPOINT.
  */
 export const GEMINI_CLI_ENDPOINT = ANTIGRAVITY_ENDPOINT_PROD;
+export const ANTIGRAVITY_CLI_ENDPOINT = ANTIGRAVITY_ENDPOINT_PROD;
 
 /**
  * Hardcoded project id used when Antigravity does not return one (e.g., business/workspace accounts).
@@ -104,6 +105,23 @@ export const ANTIGRAVITY_HEADERS = {
   "Client-Metadata": `{"ideType":"ANTIGRAVITY","platform":"${process.platform === "win32" ? "WINDOWS" : "MACOS"}","pluginType":"GEMINI"}`,
 } as const;
 
+export const ANTIGRAVITY_CLI_HEADERS = {
+  get "User-Agent"() {
+    const os = process.platform === "win32" ? "windows" : process.platform;
+    const arch = process.arch === "x64" ? "amd64" : process.arch;
+    return `antigravity/cli/1.0.1 ${os}/${arch}`;
+  },
+  get "Client-Metadata"() {
+    const os = process.platform === "win32" ? "windows" : process.platform;
+    const metadataPlatform = os === "windows" ? "WINDOWS" : "MACOS";
+    return JSON.stringify({
+      ideType: "ANTIGRAVITY_CLI",
+      platform: metadataPlatform,
+      pluginType: "NONE"
+    });
+  }
+};
+
 export const GEMINI_CLI_HEADERS = {
   "User-Agent": "google-api-nodejs-client/9.15.1",
   "X-Goog-Api-Client": "gl-node/22.17.0",
@@ -129,6 +147,12 @@ export type HeaderSet = {
 };
 
 export function getRandomizedHeaders(style: HeaderStyle, model?: string): HeaderSet {
+  if (style === "antigravity-cli") {
+    return {
+      "User-Agent": ANTIGRAVITY_CLI_HEADERS["User-Agent"],
+      "Client-Metadata": ANTIGRAVITY_CLI_HEADERS["Client-Metadata"],
+    };
+  }
   if (style === "gemini-cli") {
     return {
       "User-Agent": GEMINI_CLI_HEADERS["User-Agent"],
@@ -145,7 +169,7 @@ export function getRandomizedHeaders(style: HeaderStyle, model?: string): Header
   };
 }
 
-export type HeaderStyle = "antigravity" | "gemini-cli";
+export type HeaderStyle = "antigravity" | "gemini-cli" | "antigravity-cli";
 
 /**
  * Provider identifier shared between the plugin loader and credential store.

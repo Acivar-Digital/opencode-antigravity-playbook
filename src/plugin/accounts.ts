@@ -122,7 +122,7 @@ export function calculateBackoffMs(
   }
 }
 
-export type BaseQuotaKey = "claude" | "gemini-antigravity" | "gemini-cli";
+export type BaseQuotaKey = "claude" | "gemini-antigravity" | "antigravity-cli" | "gemini-cli";
 export type QuotaKey = BaseQuotaKey | `${BaseQuotaKey}:${string}`;
 
 export interface ManagedAccount {
@@ -170,7 +170,7 @@ function getQuotaKey(family: ModelFamily, headerStyle: HeaderStyle, model?: stri
   if (family === "claude") {
     return "claude";
   }
-  const base = headerStyle === "gemini-cli" ? "gemini-cli" : "gemini-antigravity";
+  const base = headerStyle === "antigravity-cli" ? "antigravity-cli" : (headerStyle === "gemini-cli" ? "gemini-cli" : "gemini-antigravity");
   if (model) {
     return `${base}:${model}`;
   }
@@ -188,7 +188,7 @@ function isRateLimitedForFamily(account: ManagedAccount, family: ModelFamily, mo
   }
   
   const antigravityIsLimited = isRateLimitedForHeaderStyle(account, family, "antigravity", model);
-  const cliIsLimited = isRateLimitedForHeaderStyle(account, family, "gemini-cli", model);
+  const cliIsLimited = isRateLimitedForHeaderStyle(account, family, "antigravity-cli", model) && isRateLimitedForHeaderStyle(account, family, "gemini-cli", model);
   
   return antigravityIsLimited && cliIsLimited;
 }
@@ -674,8 +674,10 @@ export class AccountManager {
         delete account.rateLimitResetTimes.claude;
       } else {
         const antigravityKey = getQuotaKey(family, "antigravity", model);
+        const agCliKey = getQuotaKey(family, "antigravity-cli", model);
         const cliKey = getQuotaKey(family, "gemini-cli", model);
         delete account.rateLimitResetTimes[antigravityKey];
+        delete account.rateLimitResetTimes[agCliKey];
         delete account.rateLimitResetTimes[cliKey];
       }
       account.consecutiveFailures = 0;
@@ -752,6 +754,9 @@ export class AccountManager {
     }
     if (!isRateLimitedForHeaderStyle(account, family, "antigravity", model)) {
       return "antigravity";
+    }
+    if (!isRateLimitedForHeaderStyle(account, family, "antigravity-cli", model)) {
+      return "antigravity-cli";
     }
     if (!isRateLimitedForHeaderStyle(account, family, "gemini-cli", model)) {
       return "gemini-cli";

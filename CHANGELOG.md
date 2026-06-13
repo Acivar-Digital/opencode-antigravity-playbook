@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.0] - 2026-06-18
+
+### Changed
+- **Unified Quota System & Gemini CLI Retirement** - Replaced the dual-quota setup with a single Antigravity-only quota flow utilizing `v1internal:fetchAvailableModels`. Removed `retrieveUserQuota` endpoints completely.
+- **Antigravity CLI Cutover** - Migrated fallback headers and model routing from the deprecated `gemini-cli` Node.js client to the compiled Go `antigravity-cli` protocol. Generated user-agent and client-metadata structures to perfectly match compiled Go clients.
+
 ## [1.6.0] - 2026-02-20
 
 ### Fixed

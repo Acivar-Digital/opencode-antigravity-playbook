@@ -81,9 +81,9 @@ describe("resolveModelWithTier", () => {
   });
 
   describe("cli_first quota preference", () => {
-    it("prefers gemini-cli when cli_first is true and no prefix is set", () => {
+    it("prefers antigravity-cli when cli_first is true and no prefix is set", () => {
       const result = resolveModelWithTier("gemini-3-flash", { cli_first: true });
-      expect(result.quotaPreference).toBe("gemini-cli");
+      expect(result.quotaPreference).toBe("antigravity-cli");
       expect(result.explicitQuota).toBe(false);
     });
 
@@ -280,7 +280,7 @@ describe("resolveModelWithVariant", () => {
 });
 
 describe("Issue #103: resolveModelForHeaderStyle", () => {
-  describe("quota fallback from gemini-cli to antigravity", () => {
+  describe("quota fallback from antigravity-cli to antigravity", () => {
     it("transforms gemini-3-flash-preview to gemini-3-flash for antigravity", () => {
       const result = resolveModelForHeaderStyle("gemini-3-flash-preview", "antigravity");
       expect(result.actualModel).toBe("gemini-3-flash");
@@ -306,36 +306,36 @@ describe("Issue #103: resolveModelForHeaderStyle", () => {
     });
   });
 
-  describe("quota fallback from antigravity to gemini-cli", () => {
-    it("transforms gemini-3-flash to gemini-3-flash-preview for gemini-cli", () => {
-      const result = resolveModelForHeaderStyle("gemini-3-flash", "gemini-cli");
+  describe("quota fallback from antigravity to antigravity-cli", () => {
+    it("transforms gemini-3-flash to gemini-3-flash-preview for antigravity-cli", () => {
+      const result = resolveModelForHeaderStyle("gemini-3-flash", "antigravity-cli");
       expect(result.actualModel).toBe("gemini-3-flash-preview");
-      expect(result.quotaPreference).toBe("gemini-cli");
+      expect(result.quotaPreference).toBe("antigravity-cli");
     });
 
-    it("transforms gemini-3-pro-low to gemini-3-pro-preview for gemini-cli", () => {
-      const result = resolveModelForHeaderStyle("gemini-3-pro-low", "gemini-cli");
+    it("transforms gemini-3-pro-low to gemini-3-pro-preview for antigravity-cli", () => {
+      const result = resolveModelForHeaderStyle("gemini-3-pro-low", "antigravity-cli");
       expect(result.actualModel).toBe("gemini-3-pro-preview");
-      expect(result.quotaPreference).toBe("gemini-cli");
+      expect(result.quotaPreference).toBe("antigravity-cli");
     });
 
-    it("transforms gemini-3.1-pro-low to gemini-3.1-pro-preview for gemini-cli", () => {
-      const result = resolveModelForHeaderStyle("gemini-3.1-pro-low", "gemini-cli");
+    it("transforms gemini-3.1-pro-low to gemini-3.1-pro-preview for antigravity-cli", () => {
+      const result = resolveModelForHeaderStyle("gemini-3.1-pro-low", "antigravity-cli");
       expect(result.actualModel).toBe("gemini-3.1-pro-preview");
-      expect(result.quotaPreference).toBe("gemini-cli");
+      expect(result.quotaPreference).toBe("antigravity-cli");
     });
 
-    it("keeps gemini-3.1-pro-preview-customtools unchanged for gemini-cli", () => {
-      const result = resolveModelForHeaderStyle("gemini-3.1-pro-preview-customtools", "gemini-cli");
+    it("keeps gemini-3.1-pro-preview-customtools unchanged for antigravity-cli", () => {
+      const result = resolveModelForHeaderStyle("gemini-3.1-pro-preview-customtools", "antigravity-cli");
       expect(result.actualModel).toBe("gemini-3.1-pro-preview-customtools");
-      expect(result.quotaPreference).toBe("gemini-cli");
+      expect(result.quotaPreference).toBe("antigravity-cli");
     });
   });
 
   describe("no transformation needed", () => {
     it("keeps gemini-2.5-flash unchanged for both header styles", () => {
       const antigravity = resolveModelForHeaderStyle("gemini-2.5-flash", "antigravity");
-      const cli = resolveModelForHeaderStyle("gemini-2.5-flash", "gemini-cli");
+      const cli = resolveModelForHeaderStyle("gemini-2.5-flash", "antigravity-cli");
       expect(antigravity.actualModel).toBe("gemini-2.5-flash");
       expect(cli.actualModel).toBe("gemini-2.5-flash");
     });

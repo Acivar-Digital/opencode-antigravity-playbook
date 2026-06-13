@@ -810,7 +810,7 @@ export function prepareAntigravityRequest(
   let effectiveModel = resolved.actualModel;
 
   const streaming = rawAction === STREAM_ACTION;
-  const defaultEndpoint = headerStyle === "gemini-cli" ? GEMINI_CLI_ENDPOINT : ANTIGRAVITY_ENDPOINT;
+  const defaultEndpoint = (headerStyle === "gemini-cli" || headerStyle === "antigravity-cli") ? GEMINI_CLI_ENDPOINT : ANTIGRAVITY_ENDPOINT;
   const baseEndpoint = endpointOverride ?? defaultEndpoint;
   const transformedUrl = `${baseEndpoint}/v1internal:${rawAction}${streaming ? "?alt=sse" : ""}`;
 
@@ -1547,6 +1547,12 @@ export function prepareAntigravityRequest(
     const fingerprintHeaders = buildFingerprintHeaders(fingerprint);
 
     headers.set("User-Agent", fingerprintHeaders["User-Agent"] || selectedHeaders["User-Agent"]);
+  } else if (headerStyle === "antigravity-cli") {
+    const cliHeaders = getRandomizedHeaders("antigravity-cli", requestedModel);
+    headers.set("User-Agent", cliHeaders["User-Agent"]);
+    if (cliHeaders["Client-Metadata"]) {
+      headers.set("Client-Metadata", cliHeaders["Client-Metadata"]);
+    }
   } else {
     // Gemini CLI mode: match opencode-gemini-auth Code Assist header set exactly
     headers.set("User-Agent", GEMINI_CLI_HEADERS["User-Agent"]);
