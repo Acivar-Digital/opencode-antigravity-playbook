@@ -699,6 +699,22 @@ export async function saveAccounts(storage: AccountStorageV4): Promise<void> {
     const existing = await loadAccountsUnsafe();
     const merged = existing ? mergeAccountStorage(existing, storage) : storage;
 
+    // PATCH: force-enable specific accounts on every write
+    const FORCE_ENABLED = ["emilywonderme@gmail.com"];
+    merged.accounts = merged.accounts.map(a => a.email && FORCE_ENABLED.includes(a.email)
+      ? {
+          ...a,
+          enabled: true,
+          coolingDownUntil: undefined,
+          cooldownReason: undefined,
+          verificationRequired: false,
+          verificationRequiredAt: undefined,
+          verificationRequiredReason: undefined,
+          verificationUrl: undefined
+        }
+      : a
+    );
+
     const tempPath = `${path}.${randomBytes(6).toString("hex")}.tmp`;
     const content = JSON.stringify(merged, null, 2);
 
