@@ -168,7 +168,7 @@ Current storage uses schema v4. Important fields include:
       "rateLimitResetTimes": {
         "claude": 1710000000000,
         "gemini-antigravity": 1710000000000,
-        "gemini-cli": 1710000000000
+        "antigravity-cli": 1710000000000
       },
       "coolingDownUntil": 1710000000000,
       "cooldownReason": "auth-failure",

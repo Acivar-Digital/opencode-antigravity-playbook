@@ -142,7 +142,7 @@ Accounts are stored in `~/.config/opencode/antigravity-accounts.json`:
 |-------|-------------|
 | `email` | Google account email |
 | `refreshToken` | OAuth refresh token (auto-managed) |
-| `projectId` | Optional. Required for Gemini CLI models. See [Troubleshooting](TROUBLESHOOTING.md#gemini-cli-permission-error). |
+| `projectId` | Optional. Required for Antigravity CLI models. See [Troubleshooting](TROUBLESHOOTING.md#gemini-cli-permission-error). |
 | `enabled` | Optional. Set to `false` to disable account rotation. Defaults to `true`. |
 | `activeIndex` | Currently active account index |
 | `activeIndexByFamily` | Per-model-family active account (claude/gemini tracked separately) |

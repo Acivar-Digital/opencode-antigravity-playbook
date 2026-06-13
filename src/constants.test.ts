@@ -12,7 +12,7 @@ describe("ANTIGRAVITY_CLI_HEADERS", () => {
     const metadataPlatform = os === "windows" ? "WINDOWS" : "MACOS";
 
     expect(ANTIGRAVITY_CLI_HEADERS["User-Agent"]).toBe(`antigravity/cli/1.0.1 ${os}/${arch}`)
-    expect(ANTIGRAVITY_CLI_HEADERS["X-Goog-Api-Client"]).toBeUndefined()
+    expect((ANTIGRAVITY_CLI_HEADERS as any)["X-Goog-Api-Client"]).toBeUndefined()
     expect(JSON.parse(ANTIGRAVITY_CLI_HEADERS["Client-Metadata"]!)).toEqual({
       ideType: "ANTIGRAVITY_CLI",
       platform: metadataPlatform,
