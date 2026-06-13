@@ -892,6 +892,28 @@ The Antigravity IDE does **not** immediately flush account files to disk after r
 
 Prefer the OAuth login flow when possible. Manual sync is a repair path, not the normal path.
 
+## Deploy and Backup Procedure
+
+Before deploying local codebase modifications directly to the active OpenCode plugin cache:
+
+1. **Create Backup**: Package the existing cache files to enable easy rollbacks:
+   ```bash
+   tar -czf /home/yapilwsl/arthityap/opencode-antigravity-auth-backup.tar.gz -C /home/yapilwsl/.cache/opencode/packages/opencode-antigravity-auth@latest .
+   ```
+2. **Build**: Run the local build script:
+   ```bash
+   npm run build
+   ```
+3. **Deploy**: Copy the compiled `dist/` directory and `package.json` to the target cache location:
+   ```bash
+   cp -r dist/ package.json /home/yapilwsl/.cache/opencode/packages/opencode-antigravity-auth@latest/node_modules/opencode-antigravity-auth/
+   ```
+4. **Rollback (If needed)**: If something breaks, restore from the backup:
+   ```bash
+   rm -rf /home/yapilwsl/.cache/opencode/packages/opencode-antigravity-auth@latest/*
+   tar -xzf /home/yapilwsl/arthityap/opencode-antigravity-auth-backup.tar.gz -C /home/yapilwsl/.cache/opencode/packages/opencode-antigravity-auth@latest
+   ```
+
 ## Testing and Verification
 
 Useful plugin commands from the repository include: [5]
