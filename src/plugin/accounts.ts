@@ -797,7 +797,7 @@ export class AccountManager {
     return true;
   }
 
-  markAccountVerificationRequired(accountIndex: number, reason?: string, verifyUrl?: string): boolean {
+  markAccountVerificationRequired(accountIndex: number, reason?: string, verifyUrl?: string, autoDisable = true): boolean {
     const account = this.accounts[accountIndex];
     if (!account) {
       return false;
@@ -818,8 +818,12 @@ export class AccountManager {
       account.verificationUrl = normalizedVerifyUrl;
     }
 
-    if (account.enabled !== false) {
-      this.setAccountEnabled(accountIndex, false);
+    if (autoDisable) {
+      if (account.enabled !== false) {
+        this.setAccountEnabled(accountIndex, false);
+      } else {
+        this.requestSaveToDisk();
+      }
     } else {
       this.requestSaveToDisk();
     }

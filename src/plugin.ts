@@ -602,6 +602,7 @@ function markStoredAccountVerificationRequired(
   account: VerificationStoredAccount,
   reason: string,
   verifyUrl?: string,
+  autoDisable = true,
 ): boolean {
   // PATCH: skip force-enabled accounts
   const FORCE_ENABLED = ["emilywonderme@gmail.com"];
@@ -633,9 +634,11 @@ function markStoredAccountVerificationRequired(
     changed = true;
   }
 
-  if (account.enabled !== false) {
-    account.enabled = false;
-    changed = true;
+  if (autoDisable) {
+    if (account.enabled !== false) {
+      account.enabled = false;
+      changed = true;
+    }
   }
 
   return changed;
@@ -2258,7 +2261,12 @@ export const createAntigravityPlugin = (providerId: string) => async (
                     const verificationReason = extracted.message ?? "Google requires account verification.";
                     const cooldownMs = 10 * 60 * 1000;
 
-                    accountManager.markAccountVerificationRequired(account.index, verificationReason, extracted.verifyUrl);
+                    accountManager.markAccountVerificationRequired(
+                      account.index,
+                      verificationReason,
+                      extracted.verifyUrl,
+                      config.auto_disable_on_verification_required,
+                    );
                     accountManager.markAccountCoolingDown(account, cooldownMs, "validation-required");
                     accountManager.markRateLimited(account, cooldownMs, family, headerStyle, model);
 
@@ -2734,16 +2742,22 @@ export const createAntigravityPlugin = (providerId: string) => async (
                         continue;
                       }
 
-                      if (verification.status === "blocked") {
+                       if (verification.status === "blocked") {
                         const changed = markStoredAccountVerificationRequired(
                           account,
                           verification.message,
                           verification.verifyUrl,
+                          config.auto_disable_on_verification_required,
                         );
                         if (changed) {
                           storageUpdated = true;
                         }
-                        activeAccountManager?.markAccountVerificationRequired(i, verification.message, verification.verifyUrl);
+                        activeAccountManager?.markAccountVerificationRequired(
+                          i,
+                          verification.message,
+                          verification.verifyUrl,
+                          config.auto_disable_on_verification_required,
+                        );
 
                         blockedCount += 1;
                         console.log("needs verification");
@@ -2826,6 +2840,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
                       account,
                       verification.message,
                       verification.verifyUrl,
+                      config.auto_disable_on_verification_required,
                     );
                     if (changed) {
                       await saveAccounts(existingStorage);
@@ -2834,6 +2849,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
                       verifyAccountIndex,
                       verification.message,
                       verification.verifyUrl,
+                      config.auto_disable_on_verification_required,
                     );
 
                     const verifyUrl = verification.verifyUrl ?? account.verificationUrl;
@@ -2841,7 +2857,11 @@ export const createAntigravityPlugin = (providerId: string) => async (
                     if (verification.message) {
                       console.log(verification.message);
                     }
-                    console.log(`${label} has been disabled until verification is completed.`);
+                    if (config.auto_disable_on_verification_required) {
+                      console.log(`${label} has been disabled until verification is completed.`);
+                    } else {
+                      console.log(`${label} remains enabled per configuration.`);
+                    }
                     if (verifyUrl) {
                       console.log(`\nVerification URL:\n${verifyUrl}\n`);
                       if (await promptOpenVerificationUrl()) {

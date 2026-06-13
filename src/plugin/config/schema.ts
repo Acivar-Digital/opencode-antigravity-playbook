@@ -236,6 +236,13 @@ export const AntigravityConfigSchema = z.object({
    * @default true
    */
   proactive_token_refresh: z.boolean().default(true),
+
+  /**
+   * Automatically disable accounts when Google requires verification.
+   * If false, the account stays enabled, allowing you to decide when to verify it.
+   * @default true
+   */
+  auto_disable_on_verification_required: z.boolean().default(true),
   
   /**
    * Seconds before token expiry to trigger proactive refresh.
@@ -451,6 +458,7 @@ export const DEFAULT_CONFIG: AntigravityConfig = {
   claude_tool_hardening: true,
   claude_prompt_auto_caching: false,
   proactive_token_refresh: true,
+  auto_disable_on_verification_required: true,
   proactive_refresh_buffer_seconds: 1800,
   proactive_refresh_check_interval_seconds: 300,
   max_rate_limit_wait_seconds: 300,
