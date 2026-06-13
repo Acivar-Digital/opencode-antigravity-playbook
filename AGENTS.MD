@@ -6,6 +6,16 @@ Guidance for AI agents working with this repository.
 
 OpenCode plugin for Google Antigravity OAuth. Intercepts `fetch()` calls to `generativelanguage.googleapis.com`, transforms them to Antigravity format, and handles auth, quota, recovery, and multi-account rotation.
 
+## 🛠️ Tool Selection & Separation Rules
+**Mandatory:** Do NOT use the `bash` tool for file searching, reading, writing, editing, listing, or checking. You must use the dedicated system tools:
+- **Search files by name:** Use the `Glob` tool (never use `find` or `ls` in `bash`).
+- **Search file contents:** Use the `Grep` tool (never use `grep` or `rg` in `bash`).
+- **Read files & list directories:** Use the `Read` tool (never use `cat`, `head`, `tail`, `ls`, or `dir` in `bash`).
+- **Edit files:** Use the `Edit` tool (never use `sed`, `awk`, `perl`, or interactive editors in `bash`).
+- **Write files:** Use the `Write` tool (never use `echo >`, `printf`, or `cat <<EOF` in `bash`).
+- **Check file status/existence:** Use `Glob` or `Read` (never use `test -f`, `stat`, or bash conditional statements to inspect files).
+Always validate the parameters against the tool schema (like absolute paths for `Read`/`Write`) before calling them. Avoid `bash` entirely unless running commands like project test suites, dependency management, or compiler tasks.
+
 ## Build & Test Commands
 
 ```bash
