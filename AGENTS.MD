@@ -6,6 +6,16 @@ Guidance for AI agents working with this repository.
 
 OpenCode plugin for Google Antigravity OAuth. Intercepts `fetch()` calls to `generativelanguage.googleapis.com`, transforms them to Antigravity format, and handles auth, quota, recovery, and multi-account rotation.
 
+### Purpose
+The purpose of this project (`opencode-antigravity-auth`) is to provide a highly resilient, multi-account proxy and credential rotation layer for OpenCode when interacting with Google's Antigravity and Gemini companion APIs. It manages OAuth tokens, handles rate limit fallback/cooldowns, injects proper user-agent headers and device fingerprints, sanitizes incompatible schemas, and recovers broken tool sessions.
+
+### Available MCP Tools
+This environment has the following MCP servers configured and available for agents:
+1. **Exa MCP (`exa_*`)** - Search and fetch web page contents.
+2. **Tavily MCP (`tavily_*`)** - Web search, extraction, and mapping.
+3. **SearXNG MCP (`searxng_*`)** - Local instance web search tool.
+4. **Research Engine MCP (`research_engine_*`)** - Parallel multi-engine query and content synthesizer.
+
 ## 🛠️ Tool Selection & Separation Rules
 **Mandatory:** Do NOT use the `bash` tool for file searching, reading, writing, editing, listing, or checking. You must use the dedicated system tools:
 - **Search files by name:** Use the `Glob` tool (never use `find` or `ls` in `bash`).
@@ -91,23 +101,31 @@ No linter or formatter is configured. Style is enforced by convention (see below
 ## Module Structure
 
 ```
-src/
-├── plugin.ts                # Main entry, fetch interceptor
-├── constants.ts             # Endpoints, headers, API config, system prompts
-├── antigravity/oauth.ts     # OAuth token exchange
-└── plugin/
-    ├── auth.ts              # Token validation & refresh
-    ├── request.ts           # Request transformation (core logic)
-    ├── request-helpers.ts   # Schema cleaning, thinking filters
-    ├── thinking-recovery.ts # Turn boundary detection
-    ├── recovery.ts          # Session recovery (tool_result_missing)
-    ├── quota.ts             # Quota checking (API usage stats)
-    ├── cache.ts             # Auth & signature caching
-    ├── accounts.ts          # Multi-account management & storage
-    ├── storage.ts           # Persistent storage schemas (Zod)
-    ├── fingerprint.ts       # Device fingerprint generation & headers
-    ├── project.ts           # Managed project context resolution
-    └── debug.ts             # Debug logging utilities
+.
+├── .agents/                 # AI Agent skills (antigravity-manager, google-oauth-accounts)
+├── docs/                    # Architecture, multi-account, configuration, troubleshooting, & spec docs
+├── src/                     # Core plugin TypeScript codebase
+│   ├── plugin.ts            # Main entry, fetch interceptor
+│   ├── constants.ts         # Endpoints, headers, API config, system prompts
+│   ├── antigravity/oauth.ts # OAuth token exchange
+│   └── plugin/
+│       ├── auth.ts          # Token validation & refresh
+│       ├── request.ts       # Request transformation (core logic)
+│       ├── request-helpers.ts # Schema cleaning, thinking filters
+│       ├── thinking-recovery.ts # Turn boundary detection
+│       ├── recovery.ts      # Session recovery (tool_result_missing)
+│       ├── quota.ts         # Quota checking (API usage stats)
+│       ├── cache.ts         # Auth & signature caching
+│       ├── accounts.ts      # Multi-account management & storage
+│       ├── storage.ts       # Persistent storage schemas (Zod)
+│       ├── fingerprint.ts   # Device fingerprint generation & headers
+│       ├── project.ts       # Managed project context resolution
+│       └── debug.ts         # Debug logging utilities
+├── script/                  # Development & verification TypeScript scripts
+│   ├── test-regression.ts   # Regression testing tool
+│   ├── test-models.ts       # Model capability/resolving tester
+│   └── test-cross-model.ts  # Cross-model behavior runner
+└── scripts/                 # Runner setup, environment provisioning, & quota checking scripts
 ```
 
 ## Key Design Patterns
