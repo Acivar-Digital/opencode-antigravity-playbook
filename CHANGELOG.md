@@ -2,6 +2,9 @@
 
 ## [2.0.0] - 2026-06-18
 
+### Added
+- **Account Health Check Script** - Added `admin/check-health.mjs` and a root-level `./health` shell script wrapper to easily monitor account statuses, enabled/disabled states, verification requirements, live/cached quotas, and cooldowns.
+
 ### Changed
 - **Unified Quota System & Gemini CLI Retirement** - Replaced the dual-quota setup with a single Antigravity-only quota flow utilizing `v1internal:fetchAvailableModels`. Removed `retrieveUserQuota` endpoints completely.
 - **Antigravity CLI Cutover** - Migrated fallback headers and model routing from the deprecated `gemini-cli` Node.js client to the compiled Go `antigravity-cli` protocol. Generated user-agent and client-metadata structures to perfectly match compiled Go clients.

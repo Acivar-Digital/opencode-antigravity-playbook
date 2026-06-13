@@ -423,6 +423,19 @@ Use this matrix before rotating or resetting accounts.
 
 Do not rotate accounts for schema/tool/model `400` errors unless the account is also showing auth/quota/rate-limit symptoms.
 
+## Account Health Check & Monitoring
+
+Use the built-in health script at the root directory to instantly view status, enabled/disabled state, verification requirements, cached/live quota fractions, rate limit cooldowns, and active alerts across all configured accounts:
+
+```bash
+./health
+```
+
+### Modes:
+- **One-shot status snapshot:** `./health`
+- **Live quota fetch from Google (slower but accurate):** `./health --live`
+- **Live monitoring (refreshes every 30 seconds):** `./health --watch --interval 30 --live`
+
 ## Diagnostic Workflow
 
 Use this order.

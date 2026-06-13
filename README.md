@@ -273,6 +273,24 @@ opencode auth login  # Run again to add more accounts
 
 For details on load balancing, dual quota pools, and account storage, see [docs/MULTI-ACCOUNT.md](docs/MULTI-ACCOUNT.md).
 
+### Monitoring Account Health
+
+You can check the health, enabled/disabled status, and remaining quota for all your logged-in accounts at any time:
+
+```bash
+./health
+```
+
+**Options:**
+- **Live check** (fetches live quota from Google):
+  ```bash
+  ./health --live
+  ```
+- **Live monitoring** (refreshes the health dashboard every 30 seconds):
+  ```bash
+  ./health --watch --interval 30 --live
+  ```
+
 ---
 
 ## Troubleshooting
