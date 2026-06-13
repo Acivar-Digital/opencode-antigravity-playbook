@@ -145,8 +145,8 @@ opencode run "Hello" --model=google/antigravity-claude-opus-4-6-thinking --varia
 > **Platform & Telemetry Parity:**
 > To guarantee protocol parity and bypass Antigravity telemetry verification checks, the headers generated for both `antigravity` (Electron client) and `antigravity-cli` (Go client) match the host platform (mapping to `WINDOWS`, `LINUX`, or `MACOS` in the platform metadata matching the operating system of the runtime).
 >
-> **Browser Telemetry Emulation (antigravity mode):**
-> For `antigravity` content requests, the plugin generates a high-fidelity Chrome browser identity (Chrome 149, WebKit, and Gecko) including structural Client Hints (`sec-ch-ua-*`), Chrome Variations (`x-client-data`), session consistency (`x-chrome-id-consistency-request`), and Google Update (`x-goog-update-*`) headers. These identities are bound consistently to each account's persistent `syncAccountId` (Google user ID), simulating stable user logins on separate machines to prevent security triggers.
+> **Browser Telemetry Emulation:**
+> For both `antigravity` and `antigravity-cli` content requests, the plugin generates a high-fidelity Chrome browser identity (Chrome 149, WebKit, and Gecko) including structural Client Hints (`sec-ch-ua-*`), Chrome Variations (`x-client-data`), session consistency (`x-chrome-id-consistency-request`), and Google Update (`x-goog-update-*`) headers. These identities are bound consistently to each account's persistent `syncAccountId` (Google user ID), simulating stable user logins on separate machines to prevent security triggers, while `antigravity-cli` still correctly preserves `Client-Metadata` to identify the client interface.
 >
 > **Telemetry Capture & Analysis Tools:**
 > The repository includes built-in SSL interception and analysis tools under `admin/capture/` to proxy legitimate Antigravity traffic, redact sensitive credentials, and diff the telemetry against the plugin:

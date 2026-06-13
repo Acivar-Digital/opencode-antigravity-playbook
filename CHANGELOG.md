@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.2.1] - 2026-06-14
+
+### Added
+- **Unified Chrome Telemetry Spoofing:** Upgraded the `antigravity-cli` request path to also inject the same high-fidelity Chrome browser telemetry headers (User-Agent, `sec-ch-ua-*`, and consistency headers) as the main `antigravity` path, while preserving `Client-Metadata`. This ensures consistent browser-like traffic signatures across all API endpoints.
+
 ## [2.2.0] - 2026-06-14
 
 ### Added

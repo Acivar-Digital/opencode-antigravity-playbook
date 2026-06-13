@@ -1085,13 +1085,13 @@ On June 18, 2026, Google is retiring the legacy Node.js-based Gemini CLI tool an
 ### Technical Implications
 1. **Header Stack Shift:**
    - Legacy `gemini-cli` used Node.js headers (`User-Agent: google-api-nodejs-client/...`, `gl-node/...`).
-   - The Go-based replacement `antigravity-cli` uses compiled Go HTTP client headers (`User-Agent: antigravity/cli/1.0.1 linux/amd64`, no Node references).
+   - The Go-based replacement `antigravity-cli` is upgraded to use the same high-fidelity Chrome browser telemetry headers (User-Agent, `sec-ch-ua-*`, `x-client-data`, etc.) as the default `antigravity` path, while preserving the Go client's `Client-Metadata` block. This eliminates signature discrepancies on production endpoints.
 2. **Quota Tracking/Usage Access:**
    - The legacy `v1internal:retrieveUserQuota` endpoint (used by `fetchGeminiCliQuota`) will return errors or become inactive.
    - Usage and model quota details (`remainingFraction` and `resetTime`) should instead be accessed exclusively via the primary `v1internal:fetchAvailableModels` response payload.
 3. **Migration Steps:**
    - Rename/update references from `gemini-cli` to `antigravity-cli`. (Completed)
-   - Update user-agent and client metadata headers to mimic the Go client. Platform-specific telemetry dynamically maps to `WINDOWS`, `LINUX`, or `MACOS` matching the runtime OS to guarantee signature compliance. (Completed)
+   - Update user-agent and client metadata headers to mimic the Chrome browser with custom client metadata. Platform-specific telemetry dynamically maps to `WINDOWS`, `LINUX`, or `MACOS` matching the runtime OS to guarantee signature compliance. (Completed)
    - Safely prune any fallback dependencies on `retrieveUserQuota`. (Completed)
 
 ### Architectural Shift & Usage Rules
