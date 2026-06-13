@@ -29,6 +29,9 @@ function parseVersion(text: string): string | null {
 }
 
 async function tryFetchVersion(url: string, maxChars?: number): Promise<string | null> {
+  if (url.includes("127.0.0.1") || url.includes("localhost")) {
+    return null;
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
