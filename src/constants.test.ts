@@ -9,7 +9,7 @@ describe("ANTIGRAVITY_CLI_HEADERS", () => {
   it("matches Go-based antigravity-cli headers", () => {
     const os = process.platform === "win32" ? "windows" : process.platform;
     const arch = process.arch === "x64" ? "amd64" : process.arch;
-    const metadataPlatform = os === "windows" ? "WINDOWS" : "MACOS";
+    const metadataPlatform = os === "windows" ? "WINDOWS" : (os === "linux" ? "LINUX" : "MACOS");
 
     expect(ANTIGRAVITY_CLI_HEADERS["User-Agent"]).toBe(`antigravity/cli/1.0.1 ${os}/${arch}`)
     expect((ANTIGRAVITY_CLI_HEADERS as any)["X-Goog-Api-Client"]).toBeUndefined()
@@ -27,7 +27,7 @@ describe("getRandomizedHeaders", () => {
       const headers = getRandomizedHeaders("antigravity-cli", "gemini-2.5-pro")
       const os = process.platform === "win32" ? "windows" : process.platform;
       const arch = process.arch === "x64" ? "amd64" : process.arch;
-      const metadataPlatform = os === "windows" ? "WINDOWS" : "MACOS";
+      const metadataPlatform = os === "windows" ? "WINDOWS" : (os === "linux" ? "LINUX" : "MACOS");
 
       expect(headers["User-Agent"]).toBe(`antigravity/cli/1.0.1 ${os}/${arch}`)
       expect(headers["X-Goog-Api-Client"]).toBeUndefined()

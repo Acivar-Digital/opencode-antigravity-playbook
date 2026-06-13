@@ -106,7 +106,7 @@ export const ANTIGRAVITY_HEADERS = {
 
 const runtimeOs = process.platform === "win32" ? "windows" : process.platform;
 const runtimeArch = process.arch === "x64" ? "amd64" : process.arch;
-const runtimeMetadataPlatform = runtimeOs === "windows" ? "WINDOWS" : "MACOS";
+const runtimeMetadataPlatform = runtimeOs === "windows" ? "WINDOWS" : (runtimeOs === "linux" ? "LINUX" : "MACOS");
 
 export const ANTIGRAVITY_CLI_HEADERS = {
   "User-Agent": `antigravity/cli/1.0.1 ${runtimeOs}/${runtimeArch}`,

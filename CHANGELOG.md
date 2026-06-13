@@ -10,6 +10,9 @@
   - **Deep JSON Schema Cleaner:** Added `cleanJsonSchema` (`src/proxy/schema-cleaner.ts`) to recursively remove unsupported MCP properties (`propertyNames`, `anyOf`, `[undefined]`), permanently fixing Gemini 3.1 Pro 400 Invalid Argument rejections on complex tool schemas.
   - **SQLite VSCDB Extractor:** Added `extractTokensFromDb` (`src/utils/vscdb-extractor.ts`) to automatically parse Base64 decoded Protobuf payloads from `state.vscdb`, drastically simplifying the extraction of Google refresh tokens and emails from existing VS Code/Antigravity Desktop databases.
 
+### Fixed
+- **CLI OS Invariant Mismatch:** Mapped Linux platforms (`process.platform === "linux"`) to `"LINUX"` instead of `"MACOS"` in the `antigravity-cli` Client-Metadata to prevent detection of mismatched telemetry headers.
+
 ## [2.0.0] - 2026-06-18
 
 ### Added

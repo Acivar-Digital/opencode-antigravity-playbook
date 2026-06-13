@@ -635,7 +635,7 @@ it("removes x-api-key header", () => {
       const headers = result.init.headers as Headers;
       const os = process.platform === "win32" ? "windows" : process.platform;
       const arch = process.arch === "x64" ? "amd64" : process.arch;
-      const metadataPlatform = os === "windows" ? "WINDOWS" : "MACOS";
+      const metadataPlatform = os === "windows" ? "WINDOWS" : (os === "linux" ? "LINUX" : "MACOS");
 
       expect(headers.get("User-Agent")).toBe(`antigravity/cli/1.0.1 ${os}/${arch}`);
       expect(headers.get("X-Goog-Api-Client")).toBeNull();
