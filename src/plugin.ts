@@ -2625,28 +2625,9 @@ export const createAntigravityPlugin = (providerId: string) => async (
                       return ` (resets in ${formatWaitTime(ms)})`;
                     };
 
-                    // Display Gemini CLI Quota first (as requested - swap order)
-                    const hasGeminiCli = res.geminiCliQuota && res.geminiCliQuota.models.length > 0;
-                    console.log(`\n  ┌─ Gemini CLI Quota`);
-                    if (!hasGeminiCli) {
-                      const errorMsg = res.geminiCliQuota?.error || "No Gemini CLI quota available";
-                      console.log(`  │  └─ ${errorMsg}`);
-                    } else {
-                      const models = res.geminiCliQuota!.models;
-                      models.forEach((model, idx) => {
-                        const isLast = idx === models.length - 1;
-                        const connector = isLast ? "└─" : "├─";
-                        const bar = createProgressBar(model.remainingFraction);
-                        const reset = formatReset(model.resetTime);
-                        const modelName = model.modelId.padEnd(29);
-                        console.log(`  │  ${connector} ${modelName} ${bar}${reset}`);
-                      });
-                    }
-
-                    // Display Antigravity Quota second
+                    // Display Antigravity Quota
                     const hasAntigravity = res.quota && Object.keys(res.quota.groups).length > 0;
-                    console.log(`  │`);
-                    console.log(`  └─ Antigravity Quota`);
+                    console.log(`\n  ┌─ Antigravity Quota`);
                     if (!hasAntigravity) {
                       const errorMsg = res.quota?.error || "No quota information available";
                       console.log(`     └─ ${errorMsg}`);
