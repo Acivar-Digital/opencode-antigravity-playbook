@@ -229,11 +229,10 @@ No linter or formatter is configured. Style is enforced by convention (see below
 │       ├── fingerprint.ts   # Device fingerprint generation & headers
 │       ├── project.ts       # Managed project context resolution
 │       └── debug.ts         # Debug logging utilities
-├── script/                  # Development & verification TypeScript scripts
+├── scripts/                 # Development, verification, and runner scripts
 │   ├── test-regression.ts   # Regression testing tool
 │   ├── test-models.ts       # Model capability/resolving tester
 │   └── test-cross-model.ts  # Cross-model behavior runner
-└── scripts/                 # Runner setup, environment provisioning, & quota checking scripts
 ```
 
 ## Key Design Patterns

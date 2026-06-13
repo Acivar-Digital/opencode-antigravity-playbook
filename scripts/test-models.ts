@@ -85,7 +85,7 @@ function printHelp(): void {
 E2E Model Test Script
 
 Usage:
-  npx tsx script/test-models.ts [options]
+  npx tsx scripts/test-models.ts [options]
 
 Options:
   --model <model>      Test specific model
@@ -95,9 +95,9 @@ Options:
   --help, -h           Show this help
 
 Examples:
-  npx tsx script/test-models.ts --dry-run
-  npx tsx script/test-models.ts --model google/gemini-3-flash-preview
-  npx tsx script/test-models.ts --category antigravity-claude
+  npx tsx scripts/test-models.ts --dry-run
+  npx tsx scripts/test-models.ts --model google/gemini-3-flash-preview
+  npx tsx scripts/test-models.ts --category antigravity-claude
 `);
 }
 

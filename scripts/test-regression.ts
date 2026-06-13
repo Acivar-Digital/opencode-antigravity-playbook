@@ -535,7 +535,7 @@ Tests:
     - stress-50-turn-endurance (51 turns, endurance test)
 
 Usage:
-  npx tsx script/test-regression.ts [options]
+  npx tsx scripts/test-regression.ts [options]
 
 Options:
   --sanity              Run sanity tests only (quick)
@@ -546,9 +546,9 @@ Options:
   --help, -h            Show this help
 
 Examples:
-  npx tsx script/test-regression.ts --sanity
-  npx tsx script/test-regression.ts --heavy
-  npx tsx script/test-regression.ts --test stress-20-turn-recovery
+  npx tsx scripts/test-regression.ts --sanity
+  npx tsx scripts/test-regression.ts --heavy
+  npx tsx scripts/test-regression.ts --test stress-20-turn-recovery
 `);
 }
 

@@ -1061,10 +1061,10 @@ Useful plugin commands from the repository include: [5]
 npm run typecheck
 npm test
 npm run build
-npx tsx script/test-regression.ts --dry-run
-npx tsx script/test-regression.ts --sanity
-npx tsx script/test-regression.ts --heavy
-npx tsx script/test-models.ts
+npx tsx scripts/test-regression.ts --dry-run
+npx tsx scripts/test-regression.ts --sanity
+npx tsx scripts/test-regression.ts --heavy
+npx tsx scripts/test-models.ts
 ```
 
 For operational verification:

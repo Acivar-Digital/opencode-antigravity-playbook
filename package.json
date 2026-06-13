@@ -35,15 +35,15 @@
     ],
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
-        "build:schema": "npx tsx script/build-schema.ts",
+        "build:schema": "npx tsx scripts/build-schema.ts",
         "typecheck": "tsc --noEmit",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:ui": "vitest --ui",
         "test:coverage": "vitest run --coverage",
         "prepublishOnly": "npm run build",
-        "test:e2e:models": "npx tsx script/test-models.ts",
-        "test:e2e:regression": "npx tsx script/test-regression.ts"
+        "test:e2e:models": "npx tsx scripts/test-models.ts",
+        "test:e2e:regression": "npx tsx scripts/test-regression.ts"
     },
     "peerDependencies": {
         "typescript": "^5"
