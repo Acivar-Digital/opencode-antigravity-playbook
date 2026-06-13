@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- **Version Patch** - Override Antigravity User-Agent version fallback to `4.2.1` and bypass updater API to prevent "version no longer supported" errors.
+- **Version Patch** - Override Antigravity User-Agent version fallback to `4.2.1` and bypass updater API / local loopback connection attempts to prevent "version no longer supported" errors.
 
 - **#397** - Gemini tool-call payload handling now enforces valid `thought_signature` behavior for `functionCall` parts, preventing `400 INVALID_ARGUMENT` in mixed and parallel call turns.
 
