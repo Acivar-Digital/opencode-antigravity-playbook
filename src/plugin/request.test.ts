@@ -623,7 +623,7 @@ it("removes x-api-key header", () => {
       expect(headers.get("x-goog-user-project")).toBeNull();
     });
 
-    it("uses exact Code Assist headers for antigravity-cli headerStyle", () => {
+    it("applies Chrome telemetry spoofing for antigravity-cli headerStyle", () => {
       const result = prepareAntigravityRequest(
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent",
         { method: "POST", body: JSON.stringify({ contents: [] }) },
@@ -634,10 +634,10 @@ it("removes x-api-key header", () => {
       );
       const headers = result.init.headers as Headers;
       const os = process.platform === "win32" ? "windows" : process.platform;
-      const arch = process.arch === "x64" ? "amd64" : process.arch;
       const metadataPlatform = os === "windows" ? "WINDOWS" : (os === "linux" ? "LINUX" : "MACOS");
 
-      expect(headers.get("User-Agent")).toBe(`antigravity/cli/1.0.1 ${os}/${arch}`);
+      expect(headers.get("User-Agent")).toContain("Mozilla/5.0");
+      expect(headers.get("sec-ch-ua")).toBeDefined();
       expect(headers.get("X-Goog-Api-Client")).toBeNull();
       expect(JSON.parse(headers.get("Client-Metadata")!)).toEqual({
         ideType: "ANTIGRAVITY_CLI",

@@ -1538,27 +1538,29 @@ export function prepareAntigravityRequest(
     }
   }
 
+  // Both modes now use the fingerprint headers for full Chrome emulation
+  const fingerprint = options?.fingerprint ?? getSessionFingerprint();
+  const fingerprintHeaders = buildFingerprintHeaders(fingerprint);
+
+  // Set all fingerprint-derived Chrome telemetry headers
+  for (const [key, value] of Object.entries(fingerprintHeaders)) {
+    if (value !== undefined) {
+      headers.set(key, value);
+    }
+  }
+
   if (headerStyle === "antigravity") {
     // Use randomized headers as the fallback pool for Antigravity mode
     const selectedHeaders = getRandomizedHeaders("antigravity", requestedModel);
 
-    // Antigravity mode: Match Antigravity Manager behavior
-    const fingerprint = options?.fingerprint ?? getSessionFingerprint();
-    const fingerprintHeaders = buildFingerprintHeaders(fingerprint);
-
-    // Set all fingerprint-derived Chrome telemetry headers
-    for (const [key, value] of Object.entries(fingerprintHeaders)) {
-      if (value !== undefined) {
-        headers.set(key, value);
-      }
-    }
     if (!headers.has("User-Agent") && selectedHeaders["User-Agent"]) {
       headers.set("User-Agent", selectedHeaders["User-Agent"]);
     }
   } else {
     // antigravity-cli mode
     const cliHeaders = getRandomizedHeaders("antigravity-cli", requestedModel);
-    headers.set("User-Agent", cliHeaders["User-Agent"]);
+    // User-Agent is already set to Chrome browser by fingerprintHeaders.
+    // Inject Client-Metadata to reflect CLI mode if present.
     if (cliHeaders["Client-Metadata"]) {
       headers.set("Client-Metadata", cliHeaders["Client-Metadata"]);
     }
