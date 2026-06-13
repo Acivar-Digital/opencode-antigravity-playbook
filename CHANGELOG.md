@@ -3,6 +3,7 @@
 ## [2.1.0] - 2026-06-14
 
 ### Added
+- **Admin Fetch-Now Tool:** Added `admin/fetch-now` and `admin/fetch-now.mjs` to force-refresh Google API quota usage details and save the refreshed state securely to the local accounts cache.
 - **Core Antigravity-Manager Features Ported** - Successfully implemented 4 major Rust features directly into Node.js using TDD:
   - **Rate Limit Parser:** Added `parseDurationString` (`src/utils/rate-limit.ts`) to exactly calculate and parse complex Google API cooldown times (e.g. `2h1m25.5s`, `510.79ms`), allowing millisecond-precision session recovery.
   - **Token Saver (Background Task Downgrader):** Added `detectBackgroundTask` (`src/proxy/token-saver.ts`) to actively intercept non-critical background tasks (like `write a 5-10 word title`, `prompt suggestion generator`) and transparently route them to cheaper `gemini-2.5-flash` models.

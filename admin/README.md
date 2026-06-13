@@ -34,3 +34,14 @@ The underlying Node.js module that powers the `health` checker.
 
 ### 4. `reset-accounts.mjs`
 The underlying Node.js module that powers the `reset` tool.
+
+---
+
+### 5. `fetch-now`
+Force-refresh Google API quota usage details and save the refreshed state to the local accounts cache.
+- **Path**: `admin/fetch-now`
+
+---
+
+### 6. `fetch-now.mjs`
+The underlying Node.js module that powers the `fetch-now` tool. Runs secure, atomic writes to local accounts cache files.

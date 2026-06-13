@@ -300,6 +300,12 @@ If you suspect that account usage is not reflecting the correct situation or if 
 admin/reset
 ```
 
+To force-refresh Google API quota usage details and save the refreshed state to the local accounts cache, run:
+
+```bash
+admin/fetch-now
+```
+
 ---
 
 ## Troubleshooting
