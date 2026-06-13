@@ -111,7 +111,10 @@ No linter or formatter is configured. Style is enforced by convention (see below
 .
 ├── .agents/                 # AI Agent skills (antigravity-manager, google-oauth-accounts)
 ├── admin/                   # Administrative wrapper tools
-│   └── check-health.mjs     # Account health checker wrapper script
+│   ├── check-health.mjs     # Account health checker wrapper script
+│   ├── health               # Health checker executable shell script (admin/health)
+│   ├── reset-accounts.mjs   # Account force-reset wrapper script
+│   └── reset                # Force-reset executable shell script (admin/reset)
 ├── docs/                    # Architecture, multi-account, configuration, troubleshooting, & spec docs
 ├── src/                     # Core plugin TypeScript codebase
 │   ├── plugin.ts            # Main entry, fetch interceptor
@@ -130,7 +133,6 @@ No linter or formatter is configured. Style is enforced by convention (see below
 │       ├── fingerprint.ts   # Device fingerprint generation & headers
 │       ├── project.ts       # Managed project context resolution
 │       └── debug.ts         # Debug logging utilities
-├── health                   # Root executable health check wrapper script (./health)
 ├── script/                  # Development & verification TypeScript scripts
 │   ├── test-regression.ts   # Regression testing tool
 │   ├── test-models.ts       # Model capability/resolving tester

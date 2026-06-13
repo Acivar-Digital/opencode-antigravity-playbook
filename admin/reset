@@ -1,0 +1,3 @@
+#!/bin/sh
+# Wrapper to force-reset and re-enable all Antigravity accounts
+exec node "$(dirname "$0")/reset-accounts.mjs" "$@"
