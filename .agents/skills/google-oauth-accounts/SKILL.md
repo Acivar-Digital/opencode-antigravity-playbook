@@ -951,6 +951,18 @@ On June 18, 2026, Google is retiring the legacy Node.js-based Gemini CLI tool an
    - Update user-agent and client metadata headers to mimic the Go client.
    - Safely prune any fallback dependencies on `retrieveUserQuota`.
 
+### Architectural Shift & Usage Rules
+1. **Shift to "Compute-Used" Metrics:**
+   - Basic message-count tracking is discarded.
+   - Google now tracks usage through a dynamic **Compute-Based Model** based on dynamic algorithmic weight calculations (prompt complexity, physical length and token volume of active history, and multi-step reasoning/tool loops).
+2. **Multi-Tiered Reset Windows:**
+   - **5-Hour Dynamic Window:** A short-term rolling percentage tracking immediate local workspace activity.
+   - **Hard Weekly Cap:** A broader infrastructure cap measuring total accumulated processing effort over a rolling 7-day period.
+   - Single complex debug loops can consume 15% to 20% of the weekly pool due to deep reasoning steps.
+3. **Prepay Billing Wall:**
+   - Gemini Developer API billing is decoupled from standard GCP post-pay credits.
+   - System relies on a strict, isolated **Prepay System inside AI Studio**. If prepaid balances reach zero, requests fail immediately regardless of GCP credit availability.
+
 ## Safety Rules
 
 - Never commit, paste, print, or expose refresh tokens.
