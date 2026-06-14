@@ -201,6 +201,10 @@ export interface AccountWithMetrics {
   healthScore: number;
   isRateLimited: boolean;
   isCoolingDown: boolean;
+  fiveHourComputeUsed?: number;
+  weeklyComputeUsed?: number;
+  fiveHourComputeBudget?: number;
+  weeklyComputeBudget?: number;
 }
 
 /**
@@ -258,7 +262,10 @@ export function selectHybridAccount(
       !acc.isRateLimited && 
       !acc.isCoolingDown && 
       acc.healthScore >= minHealthScore &&
-      tokenTracker.hasTokens(acc.index)
+      tokenTracker.hasTokens(acc.index) &&
+      // Skip if weekly budget or 5-hour budget is explicitly exhausted
+      !(acc.weeklyComputeBudget && acc.weeklyComputeUsed && acc.weeklyComputeUsed >= acc.weeklyComputeBudget) &&
+      !(acc.fiveHourComputeBudget && acc.fiveHourComputeUsed && acc.fiveHourComputeUsed >= acc.fiveHourComputeBudget)
     )
     .map(acc => ({
       ...acc,
@@ -315,7 +322,18 @@ function calculateHybridScore(
   const tokenComponent = (account.tokens / maxTokens) * 100 * 5; // 0-500
   const secondsSinceUsed = (Date.now() - account.lastUsed) / 1000;
   const freshnessComponent = Math.min(secondsSinceUsed, 3600) * 0.1; // 0-360
-  return Math.max(0, healthComponent + tokenComponent + freshnessComponent);
+  
+  let computePenalty = 0;
+  if (account.weeklyComputeBudget && account.weeklyComputeUsed) {
+    const weeklyRatio = account.weeklyComputeUsed / account.weeklyComputeBudget;
+    computePenalty += weeklyRatio * 150; // up to 150 points penalty
+  }
+  if (account.fiveHourComputeBudget && account.fiveHourComputeUsed) {
+    const fiveHourRatio = account.fiveHourComputeUsed / account.fiveHourComputeBudget;
+    computePenalty += fiveHourRatio * 150; // up to 150 points penalty
+  }
+
+  return Math.max(0, healthComponent + tokenComponent + freshnessComponent - computePenalty);
 }
 
 // ============================================================================

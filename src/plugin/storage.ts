@@ -203,6 +203,8 @@ export interface AccountMetadataV3 {
   /** Cached soft quota data */
   cachedQuota?: Record<string, { remainingFraction?: number; resetTime?: string; modelCount: number }>;
   cachedQuotaUpdatedAt?: number;
+  /** Local ledger for compute-based quota tracking */
+  computeUsageLog?: Array<{ timestamp: number; cost: number; model: string; isReasoning: boolean }>;
 }
 
 export interface AccountStorageV3 {
@@ -427,6 +429,7 @@ function mergeAccountStorage(
             ...acc.rateLimitResetTimes,
           },
           lastUsed: Math.max(existingAcc.lastUsed || 0, acc.lastUsed || 0),
+          computeUsageLog: acc.computeUsageLog ?? existingAcc.computeUsageLog,
         });
       } else {
         accountMap.set(acc.refreshToken, acc);

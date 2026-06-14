@@ -10,6 +10,7 @@ import {
 } from "../constants";
 import { cacheSignature, getCachedSignature } from "./cache";
 import { getKeepThinking } from "./config";
+import { estimateRequestCost } from "./compute";
 import {
   createStreamingTransformer,
   transformSseLine,
@@ -739,6 +740,8 @@ export interface PrepareRequestOptions {
   googleSearch?: GoogleSearchConfig;
   /** Per-account fingerprint for rate limit mitigation. Falls back to session fingerprint if not provided. */
   fingerprint?: Fingerprint;
+  /** Custom reasoning cost multiplier for compute estimation */
+  reasoningCostMultiplier?: number;
 }
 
 export function prepareAntigravityRequest(
@@ -765,6 +768,8 @@ export function prepareAntigravityRequest(
   needsSignedThinkingWarmup?: boolean;
   headerStyle: HeaderStyle;
   thinkingRecoveryMessage?: string;
+  estimatedCost?: number;
+  costTier?: "light" | "medium" | "heavy";
 } {
   const baseInit: RequestInit = { ...init };
   const headers = new Headers(init?.headers ?? {});
@@ -1565,6 +1570,12 @@ export function prepareAntigravityRequest(
       headers.set("Client-Metadata", cliHeaders["Client-Metadata"]);
     }
   }
+  const costEstimate = estimateRequestCost(
+    typeof body === "string" ? body : "",
+    effectiveModel,
+    options?.reasoningCostMultiplier
+  );
+
   return {
     request: transformedUrl,
     init: {
@@ -1584,6 +1595,8 @@ export function prepareAntigravityRequest(
     needsSignedThinkingWarmup,
     headerStyle,
     thinkingRecoveryMessage,
+    estimatedCost: costEstimate.estimatedCost,
+    costTier: costEstimate.costTier,
   };
 }
 

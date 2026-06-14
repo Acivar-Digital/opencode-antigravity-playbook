@@ -3,6 +3,8 @@ import { loadAccounts, saveAccounts, type AccountStorageV4, type AccountMetadata
 import type { OAuthAuthDetails, RefreshParts } from "./types";
 import type { AccountSelectionStrategy } from "./config/schema";
 import { getHealthTracker, getTokenTracker, selectHybridAccount, type AccountWithMetrics } from "./rotation";
+import { getComputeTracker } from "./compute";
+import { getRuntimeConfig } from "./config/index";
 import { generateFingerprint, updateFingerprintVersion, type Fingerprint, type FingerprintVersion, MAX_FINGERPRINT_HISTORY } from "./fingerprint";
 import type { QuotaGroup, QuotaGroupSummary } from "./quota";
 import { getModelFamily } from "./transform/model-resolver";
@@ -155,6 +157,7 @@ export interface ManagedAccount {
   verificationRequiredAt?: number;
   verificationRequiredReason?: string;
   verificationUrl?: string;
+  computeUsageLog?: Array<{ timestamp: number; cost: number; model: string; isReasoning: boolean }>;
 }
 
 function nowMs(): number {
@@ -370,6 +373,7 @@ export class AccountManager {
             verificationRequiredAt: acc.verificationRequiredAt,
             verificationRequiredReason: acc.verificationRequiredReason,
             verificationUrl: acc.verificationUrl,
+            computeUsageLog: acc.computeUsageLog,
           };
         })
         .filter((a): a is ManagedAccount => a !== null);
@@ -454,6 +458,14 @@ export class AccountManager {
         this.currentAccountIndexByFamily.gemini = 0;
       }
     }
+
+    // Populate the global ComputeTracker with loaded usage logs
+    const tracker = getComputeTracker();
+    for (const acc of this.accounts) {
+      if (acc.computeUsageLog) {
+        tracker.setLogs(acc.index, acc.computeUsageLog);
+      }
+    }
   }
 
   getAccountCount(): number {
@@ -530,11 +542,17 @@ export class AccountManager {
     if (strategy === 'hybrid') {
       const healthTracker = getHealthTracker();
       const tokenTracker = getTokenTracker();
+      const computeTracker = getComputeTracker();
+      const config = getRuntimeConfig();
+      const computeEnabled = config?.compute_tracking?.enabled !== false;
+      const fiveHourBudget = config?.compute_tracking?.five_hour_budget ?? 500;
+      const weeklyBudget = config?.compute_tracking?.weekly_budget ?? 5000;
       
       const accountsWithMetrics: AccountWithMetrics[] = this.accounts
         .filter(acc => acc.enabled !== false)
         .map(acc => {
           clearExpiredRateLimits(acc);
+          const totals = computeTracker.getRollingTotals(acc.index);
           return {
             index: acc.index,
             lastUsed: acc.lastUsed,
@@ -542,6 +560,10 @@ export class AccountManager {
             isRateLimited: isRateLimitedForFamily(acc, family, model) || 
                           isOverSoftQuotaThreshold(acc, family, softQuotaThresholdPercent, softQuotaCacheTtlMs, model),
             isCoolingDown: this.isAccountCoolingDown(acc),
+            fiveHourComputeUsed: computeEnabled ? totals.fiveHourTotal : undefined,
+            weeklyComputeUsed: computeEnabled ? totals.weeklyTotal : undefined,
+            fiveHourComputeBudget: computeEnabled ? fiveHourBudget : undefined,
+            weeklyComputeBudget: computeEnabled ? weeklyBudget : undefined,
           };
         });
 
@@ -1003,6 +1025,7 @@ export class AccountManager {
         verificationRequiredAt: a.verificationRequiredAt,
         verificationRequiredReason: a.verificationRequiredReason,
         verificationUrl: a.verificationUrl,
+        computeUsageLog: a.computeUsageLog,
       })),
       activeIndex: claudeIndex,
       activeIndexByFamily: {

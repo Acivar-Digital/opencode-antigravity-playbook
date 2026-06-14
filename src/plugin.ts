@@ -49,6 +49,8 @@ import { initDiskSignatureCache } from "./plugin/cache";
 import { createProactiveRefreshQueue, type ProactiveRefreshQueue } from "./plugin/refresh-queue";
 import { initLogger, createLogger } from "./plugin/logger";
 import { initHealthTracker, getHealthTracker, initTokenTracker, getTokenTracker } from "./plugin/rotation";
+import { getComputeTracker } from "./plugin/compute";
+import { isClaudeThinkingModel, isGemini3Model } from "./plugin/transform/index";
 import { initAntigravityVersion } from "./plugin/version";
 import { executeSearch } from "./plugin/search";
 import type {
@@ -1951,7 +1953,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
             let forceThinkingRecovery = false;
             
             // Track if token was consumed (for hybrid strategy refund on error)
-            let tokenConsumed = false;
+            let tokenConsumed = 0;
             
             // Track capacity retries per endpoint to prevent infinite loops
             let capacityRetryCount = 0;
@@ -1986,6 +1988,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
                     claudeToolHardening: config.claude_tool_hardening,
                     claudePromptAutoCaching: config.claude_prompt_auto_caching,
                     fingerprint: account.fingerprint,
+                    reasoningCostMultiplier: config.compute_tracking?.reasoning_cost_multiplier,
                   },
                 );
 
@@ -2029,7 +2032,10 @@ export const createAntigravityPlugin = (providerId: string) => async (
                 // Consume token for hybrid strategy
                 // Refunded later if request fails (429 or network error)
                 if (config.account_selection_strategy === 'hybrid') {
-                  tokenConsumed = getTokenTracker().consume(account.index);
+                  const cost = prepared.estimatedCost ?? 1;
+                  if (getTokenTracker().consume(account.index, cost)) {
+                    tokenConsumed = cost;
+                  }
                 }
 
                 const response = await fetch(prepared.request, prepared.init);
@@ -2041,9 +2047,9 @@ export const createAntigravityPlugin = (providerId: string) => async (
                 // Handle 429 rate limit (or Service Overloaded) with improved logic
                 if (response.status === 429 || response.status === 503 || response.status === 529) {
                   // Refund token on rate limit
-                  if (tokenConsumed) {
-                    getTokenTracker().refund(account.index);
-                    tokenConsumed = false;
+                  if (tokenConsumed > 0) {
+                    getTokenTracker().refund(account.index, tokenConsumed);
+                    tokenConsumed = 0;
                   }
 
                   const defaultRetryMs = (config.default_retry_after_seconds ?? 60) * 1000;
@@ -2413,12 +2419,59 @@ export const createAntigravityPlugin = (providerId: string) => async (
                   }
                 }
 
+                // Record compute usage if enabled
+                if (config.compute_tracking?.enabled !== false) {
+                  try {
+                    let finalCost = prepared.estimatedCost ?? 1;
+                    const totalTokensHeader = transformedResponse.headers.get("x-antigravity-total-token-count");
+                    if (totalTokensHeader) {
+                      const totalTokens = parseInt(totalTokensHeader, 10);
+                      if (!isNaN(totalTokens)) {
+                        let baseCost = Math.max(1, Math.ceil(totalTokens / 1000));
+                        const isClaudeThinking = prepared.effectiveModel && isClaudeThinkingModel(prepared.effectiveModel);
+                        const isGemini3 = prepared.effectiveModel && isGemini3Model(prepared.effectiveModel);
+                        let isReasoning = !!isClaudeThinking;
+                        if (isGemini3 && prepared.init.body) {
+                          try {
+                            const parsedBody = JSON.parse(String(prepared.init.body));
+                            const req = typeof parsedBody.request === "object" && parsedBody.request !== null ? parsedBody.request : parsedBody;
+                            const thinkingMode = req.generationConfig?.thinkingConfig?.thinkingMode;
+                            if (thinkingMode && thinkingMode !== "THINKING_DISABLED") {
+                              isReasoning = true;
+                            }
+                          } catch {
+                            // Fallback to simpler check if JSON parsing fails
+                            isReasoning = String(prepared.init.body).includes('"thinkingMode"') && !String(prepared.init.body).includes("THINKING_DISABLED");
+                          }
+                        }
+                        if (isReasoning) {
+                          baseCost *= (config.compute_tracking?.reasoning_cost_multiplier ?? 2);
+                        }
+                        finalCost = Math.ceil(baseCost);
+                      }
+                    }
+                    
+                    const tracker = getComputeTracker();
+                    const updatedLogs = tracker.recordUsage(
+                      account.index,
+                      finalCost,
+                      prepared.effectiveModel ?? "unknown",
+                      finalCost > (prepared.estimatedCost ?? 1) * 1.5
+                    );
+                    
+                    account.computeUsageLog = updatedLogs;
+                    accountManager.requestSaveToDisk();
+                  } catch (computeErr) {
+                    pushDebug(`compute-tracking-error: ${computeErr instanceof Error ? computeErr.message : String(computeErr)}`);
+                  }
+                }
+
                 return transformedResponse;
               } catch (error) {
                 // Refund token on network/API error (only if consumed)
-                if (tokenConsumed) {
-                  getTokenTracker().refund(account.index);
-                  tokenConsumed = false;
+                if (tokenConsumed > 0) {
+                  getTokenTracker().refund(account.index, tokenConsumed);
+                  tokenConsumed = 0;
                 }
 
                 // Handle recoverable thinking errors - retry with forced recovery

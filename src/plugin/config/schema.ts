@@ -415,15 +415,27 @@ export const AntigravityConfigSchema = z.object({
      max_score: z.number().min(50).max(100).default(100),
    }).optional(),
    
-   // =========================================================================
-   // Token Bucket (for hybrid strategy)
-   // =========================================================================
-   
-   token_bucket: z.object({
-     max_tokens: z.number().min(1).max(1000).default(50),
-     regeneration_rate_per_minute: z.number().min(0.1).max(60).default(6),
-     initial_tokens: z.number().min(1).max(1000).default(50),
-   }).optional(),
+    // =========================================================================
+    // Token Bucket (for hybrid strategy)
+    // =========================================================================
+    
+    token_bucket: z.object({
+      max_tokens: z.number().min(1).max(1000).default(50),
+      regeneration_rate_per_minute: z.number().min(0.1).max(60).default(6),
+      initial_tokens: z.number().min(1).max(1000).default(50),
+    }).optional(),
+
+    // =========================================================================
+    // Compute Tracking
+    // =========================================================================
+    
+    compute_tracking: z.object({
+      enabled: z.boolean().default(true),
+      five_hour_budget: z.number().min(100).max(10000).default(500),
+      weekly_budget: z.number().min(1000).max(100000).default(5000),
+      safety_margin_percent: z.number().min(0).max(50).default(20),
+      reasoning_cost_multiplier: z.number().min(1).max(5).default(2),
+    }).optional(),
    
    // =========================================================================
    // Auto-Update
@@ -495,5 +507,12 @@ export const DEFAULT_CONFIG: AntigravityConfig = {
     max_tokens: 50,
     regeneration_rate_per_minute: 6,
     initial_tokens: 50,
+  },
+  compute_tracking: {
+    enabled: true,
+    five_hour_budget: 500,
+    weekly_budget: 5000,
+    safety_margin_percent: 20,
+    reasoning_cost_multiplier: 2,
   },
 };

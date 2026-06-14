@@ -108,6 +108,9 @@ As of June 18, 2026, Google has migrated to an active compute-based usage model.
 1. Assume all context turns carry an increasing token multiplier due to mandatory internal reasoning preservation.
 2. Prioritize hyper-concise code block updates to minimize input token weight.
 3. Conserve execution cycles during multi-file workspace reviews to protect the shared weekly rolling compute quota from early exhaustion.
+4. **Fiduciary Quota Protection**: You have a strict fiduciary duty to avoid token waste. Large multi-turn contexts compound rapidly. Explicitly analyze code size before modifying.
+5. **Surgical AST-Based Edits**: To protect the daily and weekly rolling quota, do not refactor adjacent functions or rewrite entire files. Output only minimal, targeted diffs. Keep final response lengths mathematically minimal.
+6. **Double Rolling Windows**: Usage is monitored across a 5-hour local dynamic window and a hard 7-day weekly cap. Deep debugging loops can consume 15% to 20% of weekly resources in a single session. Protect them.
 
 ### Purpose
 The purpose of this project (`opencode-antigravity-auth`) is to provide a highly resilient, multi-account proxy and credential rotation layer for OpenCode when interacting with Google's Antigravity and Gemini companion APIs. It manages OAuth tokens, handles rate limit fallback/cooldowns, injects proper user-agent headers and device fingerprints, sanitizes incompatible schemas, and recovers broken tool sessions.
