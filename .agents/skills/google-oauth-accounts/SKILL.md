@@ -1110,6 +1110,7 @@ On June 18, 2026, Google is retiring the legacy Node.js-based Gemini CLI tool an
    - **5-Hour Dynamic Window:** A short-term rolling percentage tracking immediate local workspace activity.
    - **Hard Weekly Cap:** A broader infrastructure cap measuring total accumulated processing effort over a rolling 7-day period.
    - Single complex debug loops can consume 15% to 20% of the weekly pool due to deep reasoning steps.
+   - **Local Compute Tracking (Plugin v2.3.0+):** The plugin actively tracks estimated and real usage metrics locally, capping log growth to 200 entries to prevent memory limits, and applies a `safety_margin_percent` validation in the hybrid rotation algorithm to route requests away from near-exhausted accounts.
 3. **Prepay Billing Wall:**
    - Gemini Developer API billing is decoupled from standard GCP post-pay credits.
    - System relies on a strict, isolated **Prepay System inside AI Studio**. If prepaid balances reach zero, requests fail immediately regardless of GCP credit availability.

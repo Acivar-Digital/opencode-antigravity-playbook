@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.3.0] - 2026-06-14
+
+### Added
+- **Compute-Based Quota Model (June 18, 2026 Shift):** Implemented active local compute tracking supporting Google's compute-based usage model. 
+- **Double Rolling Windows:** Tracks a 5-hour local dynamic window and 7-day weekly cap totals locally.
+- **Variable-Cost Hybrid Selection:** Integrates estimated compute costs (prompt complexity, history context, tools, and reasoning multipliers) into the Hybrid load balancing strategy. Includes `safety_margin_percent` validation to preemptively skip accounts before exhaustion.
+- **Log Capping & Exception Isolation:** Enforces a 200-entry hard cap on persistent local usage logs to prevent unbounded file size growth, and wraps metrics updates in robust try/catch blocks for silent error recovery.
+
 ## [2.2.2] - 2026-06-14
 
 ### Fixed

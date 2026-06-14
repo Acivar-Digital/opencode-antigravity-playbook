@@ -15,6 +15,7 @@ Enable Opencode to authenticate against **Antigravity** (Google's IDE) via OAuth
 - **Precise Rate Limiting & SQLite Extractor** — parses exact millisecond cooldowns from API errors and extracts existing Google refresh tokens automatically from `state.vscdb`.
 - **Claude Opus 4.6, Sonnet 4.6** and **Gemini 3.1 Pro/Flash** via Google OAuth
 - **Multi-account support** — add multiple Google accounts, auto-rotates when rate-limited
+- **Compute-Based Quota Tracking** — tracks rolling 5-hour local dynamic window and hard 7-day weekly caps, using safety margins to balance loads
 - **Antigravity CLI fallbacks** — seamlessly switches to `antigravity-cli` headers when default limits are reached
 - **Thinking models** — extended thinking for Claude and Gemini 3 with configurable budgets
 - **Google Search grounding** — enable web search for Gemini models (auto or always-on)
