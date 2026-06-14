@@ -564,6 +564,7 @@ export class AccountManager {
             weeklyComputeUsed: computeEnabled ? totals.weeklyTotal : undefined,
             fiveHourComputeBudget: computeEnabled ? fiveHourBudget : undefined,
             weeklyComputeBudget: computeEnabled ? weeklyBudget : undefined,
+            safetyMarginPercent: config?.compute_tracking?.safety_margin_percent,
           };
         });
 

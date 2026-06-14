@@ -205,6 +205,7 @@ export interface AccountWithMetrics {
   weeklyComputeUsed?: number;
   fiveHourComputeBudget?: number;
   weeklyComputeBudget?: number;
+  safetyMarginPercent?: number;
 }
 
 /**
@@ -258,15 +259,23 @@ export function selectHybridAccount(
   minHealthScore: number = 50,
 ): number | null {
   const candidates = accounts
-    .filter(acc => 
-      !acc.isRateLimited && 
-      !acc.isCoolingDown && 
-      acc.healthScore >= minHealthScore &&
-      tokenTracker.hasTokens(acc.index) &&
-      // Skip if weekly budget or 5-hour budget is explicitly exhausted
-      !(acc.weeklyComputeBudget && acc.weeklyComputeUsed && acc.weeklyComputeUsed >= acc.weeklyComputeBudget) &&
-      !(acc.fiveHourComputeBudget && acc.fiveHourComputeUsed && acc.fiveHourComputeUsed >= acc.fiveHourComputeBudget)
-    )
+    .filter(acc => {
+      const margin = acc.safetyMarginPercent ?? 20;
+      const marginMultiplier = 1 - (margin / 100);
+      
+      const weeklyExhausted = acc.weeklyComputeBudget && acc.weeklyComputeUsed && 
+        acc.weeklyComputeUsed >= acc.weeklyComputeBudget * marginMultiplier;
+      
+      const fiveHourExhausted = acc.fiveHourComputeBudget && acc.fiveHourComputeUsed && 
+        acc.fiveHourComputeUsed >= acc.fiveHourComputeBudget * marginMultiplier;
+
+      return !acc.isRateLimited && 
+        !acc.isCoolingDown && 
+        acc.healthScore >= minHealthScore &&
+        tokenTracker.hasTokens(acc.index) &&
+        !weeklyExhausted &&
+        !fiveHourExhausted;
+    })
     .map(acc => ({
       ...acc,
       tokens: tokenTracker.getTokens(acc.index)
