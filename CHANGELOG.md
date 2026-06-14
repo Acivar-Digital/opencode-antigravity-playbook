@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.2.2] - 2026-06-14
+
+### Fixed
+- **VPS Auth Sync & Mirroring:** Added support for copying `auth.json` to the VPS in `implement-on-vps.sh` to prevent `API key not valid` errors caused by Google being configured as an `api` provider instead of `oauth`. Added troubleshooting notes about TUI-focused execution on VPS.
+
 ## [2.2.1] - 2026-06-14
 
 ### Added

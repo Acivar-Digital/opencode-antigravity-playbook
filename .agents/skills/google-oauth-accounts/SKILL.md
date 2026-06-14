@@ -587,6 +587,14 @@ Fix:
    ```
    Also verify `account_selection_strategy` is set in `antigravity.json` (not null/missing). Without a strategy, the plugin defaults to `sticky` and will keep retrying the same account.
 
+### VPS Mirroring / Remote Setup (auth.json mismatch)
+
+**Symptom:** OpenCode on the VPS fails immediately with `API key not valid` or fallback errors even though the accounts were synced.
+**Root cause:** OpenCode checks `~/.local/share/opencode/auth.json` to verify the provider credential type. If the VPS has Google configured as `api` type (e.g., from dummy credentials) instead of `oauth` type, the plugin's auth loader skips intercepting requests.
+**Fix:** Sync the `auth.json` file from the local machine (which has Google set to `"type": "oauth"`) to the VPS, or remove the Google key from the VPS using `opencode providers logout` and re-authenticate via OAuth.
+
+**TUI-Only Focus Note:** In remote VPS environments, full tool-use via headless execution commands (like `opencode run`) may trigger GCP project permission errors (e.g. `cloudaicompanion.instances.completeTask`). The interactive TUI interface bypasses these constraints and remains the main supported mode of operation. Do not attempt to fix API-level completeTask errors when TUI runs cleanly.
+
 ### Stubborn accounts that keep reverting (verification-required / re-enabled after delete)
 
 **Symptom:** An account you deleted keeps coming back, or an account you re-enabled keeps flipping back to `enabled: false` / `verificationRequired: true` after every save, even after WSL/OpenCode restarts.

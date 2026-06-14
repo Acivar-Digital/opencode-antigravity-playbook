@@ -559,6 +559,11 @@ opencode auth login
 
 OAuth callback requires browser to reach `localhost` on the machine running OpenCode.
 
+**VPS Mirroring:**
+If mirroring local configurations onto a remote VPS, ensure `~/.local/share/opencode/auth.json` is synced to the VPS. If Google is configured as an `"api"` provider type instead of `"oauth"`, the plugin will skip interception and trigger `API key not valid` errors.
+
+*TUI Focus*: Running remote tasks headless via `opencode run` on a VPS can throw Google Cloud IAM permissions exceptions (`completeTask`). The interactive TUI mode is the primary supported path.
+
 **WSL2:**
 - Use VS Code's port forwarding, or
 - Configure Windows → WSL port forwarding
