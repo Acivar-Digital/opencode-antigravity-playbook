@@ -704,9 +704,12 @@ export async function saveAccounts(storage: AccountStorageV4): Promise<void> {
     const existing = await loadAccountsUnsafe();
     const merged = existing ? mergeAccountStorage(existing, storage) : storage;
 
-    // PATCH: force-enable specific accounts on every write
+    // PATCH: strip banned accounts, force-enable specific accounts on every write
+    const BANNED_EMAILS = ["tran.tran5990@gmail.com"];
     const FORCE_ENABLED = ["emilywonderme@gmail.com"];
-    merged.accounts = merged.accounts.map(a => a.email && FORCE_ENABLED.includes(a.email)
+    merged.accounts = merged.accounts
+      .filter(a => !a.email || !BANNED_EMAILS.includes(a.email))
+      .map(a => a.email && FORCE_ENABLED.includes(a.email)
       ? {
           ...a,
           enabled: true,
@@ -750,6 +753,25 @@ export async function saveAccountsReplace(storage: AccountStorageV4): Promise<vo
   await ensureGitignore(configDir);
 
   await withFileLock(path, async () => {
+    // PATCH: strip banned accounts, force-enable specific accounts on every write
+    const BANNED_EMAILS = ["tran.tran5990@gmail.com"];
+    const FORCE_ENABLED = ["emilywonderme@gmail.com"];
+    storage.accounts = storage.accounts
+      .filter(a => !a.email || !BANNED_EMAILS.includes(a.email))
+      .map(a => a.email && FORCE_ENABLED.includes(a.email)
+      ? {
+          ...a,
+          enabled: true,
+          coolingDownUntil: undefined,
+          cooldownReason: undefined,
+          verificationRequired: false,
+          verificationRequiredAt: undefined,
+          verificationRequiredReason: undefined,
+          verificationUrl: undefined
+        }
+      : a
+    );
+
     const tempPath = `${path}.${randomBytes(6).toString("hex")}.tmp`;
     const content = JSON.stringify(storage, null, 2);
 
