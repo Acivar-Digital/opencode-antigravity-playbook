@@ -29,16 +29,20 @@ rsync -avz --delete "${LOCAL_HOME}/.config/opencode/skills/" "${VPS_TARGET}:${VP
 scp "${LOCAL_HOME}/.config/opencode/package.json" "${VPS_TARGET}:${VPS_HOME}/.config/opencode/package.json"
 
 echo "=== 4. Syncing Antigravity accounts (OAuth tokens) ==="
-scp "${LOCAL_HOME}/.config/opencode/antigravity-accounts.json" "${VPS_TARGET}:${VPS_HOME}/.config/opencode/antigravity-accounts.json"
+scp -q "${LOCAL_HOME}/.config/opencode/antigravity-accounts.json" "${VPS_TARGET}:${VPS_HOME}/.config/opencode/antigravity-accounts.json"
+echo "  antigravity-accounts.json synced"
+
+echo "=== 4b. Syncing auth.json (OAuth credential) ==="
+scp -q "${LOCAL_HOME}/.local/share/opencode/auth.json" "${VPS_TARGET}:${VPS_HOME}/.local/share/opencode/auth.json"
+echo "  auth.json synced"
 
 echo "=== 5. Mirroring and adjusting opencode.json & opencode.jsonc ==="
-# We read the local opencode.json, replace /home/yapilwsl with /home/vps466a, and write to both opencode.json and opencode.jsonc on the VPS.
 LOCAL_CONFIG_JSON=$(cat "${LOCAL_HOME}/.config/opencode/opencode.json")
 VPS_CONFIG_JSON=$(echo "${LOCAL_CONFIG_JSON}" | sed "s|/home/yapilwsl|/home/vps466a|g")
 
-ssh ${VPS_TARGET} "cat << 'EOF' > ~/.config/opencode/opencode.json
+ssh ${VPS_TARGET} "cat > ~/.config/opencode/opencode.json << 'ENDOFJSON'
 ${VPS_CONFIG_JSON}
-EOF
+ENDOFJSON
 cp ~/.config/opencode/opencode.json ~/.config/opencode/opencode.jsonc"
 
 echo "=== 6. Installing npm packages on VPS ==="
