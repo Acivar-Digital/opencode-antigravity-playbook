@@ -18,7 +18,7 @@ export {
   DEFAULT_CONFIG,
   type AntigravityConfig,
   type SignatureCacheConfig,
-} from "./schema";
+} from "./schema.js";
 
 export {
   loadConfig,
@@ -29,4 +29,4 @@ export {
   initRuntimeConfig,
   getKeepThinking,
   getRuntimeConfig,
-} from "./loader";
+} from "./loader.js";

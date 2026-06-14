@@ -7,16 +7,16 @@ import {
   SKIP_THOUGHT_SIGNATURE,
   getRandomizedHeaders,
   type HeaderStyle,
-} from "../constants";
-import { cacheSignature, getCachedSignature } from "./cache";
-import { getKeepThinking } from "./config";
-import { estimateRequestCost } from "./compute";
+} from "../constants.js";
+import { cacheSignature, getCachedSignature } from "./cache.js";
+import { getKeepThinking } from "./config/index.js";
+import { estimateRequestCost } from "./compute.js";
 import {
   createStreamingTransformer,
   transformSseLine,
   transformStreamingPayload,
-} from "./core/streaming";
-import { defaultSignatureStore } from "./stores/signature-store";
+} from "./core/streaming/index.js";
+import { defaultSignatureStore } from "./stores/signature-store.js";
 import {
   DEBUG_MESSAGE_PREFIX,
   isDebugEnabled,
@@ -24,8 +24,8 @@ import {
   logAntigravityDebugResponse,
   logCacheStats,
   type AntigravityDebugContext,
-} from "./debug";
-import { createLogger } from "./logger";
+} from "./debug.js";
+import { createLogger } from "./logger.js";
 import {
   cleanJSONSchemaForAntigravity,
   DEFAULT_THINKING_BUDGET,
@@ -46,19 +46,19 @@ import {
   rewriteAntigravityPreviewAccessError,
   transformThinkingParts,
   type AntigravityApiBody,
-} from "./request-helpers";
+} from "./request-helpers.js";
 import {
   CLAUDE_TOOL_SYSTEM_INSTRUCTION,
   CLAUDE_DESCRIPTION_PROMPT,
   ANTIGRAVITY_SYSTEM_INSTRUCTION,
-} from "../constants";
+} from "../constants.js";
 import {
   analyzeConversationState,
   closeToolLoopForThinking,
   needsThinkingRecovery,
-} from "./thinking-recovery";
-import { sanitizeCrossModelPayloadInPlace } from "./transform/cross-model-sanitizer";
-import { isGemini3Model, isImageGenerationModel, buildImageGenerationConfig, applyGeminiTransforms } from "./transform";
+} from "./thinking-recovery.js";
+import { sanitizeCrossModelPayloadInPlace } from "./transform/cross-model-sanitizer.js";
+import { isGemini3Model, isImageGenerationModel, buildImageGenerationConfig, applyGeminiTransforms } from "./transform/index.js";
 import {
   resolveModelWithTier,
   resolveModelWithVariant,
@@ -67,10 +67,10 @@ import {
   isClaudeThinkingModel,
   CLAUDE_THINKING_MAX_OUTPUT_TOKENS,
   type ThinkingTier,
-} from "./transform";
-import { detectErrorType } from "./recovery";
-import { getSessionFingerprint, buildFingerprintHeaders, type Fingerprint } from "./fingerprint";
-import type { GoogleSearchConfig } from "./transform/types";
+} from "./transform/index.js";
+import { detectErrorType } from "./recovery.js";
+import { getSessionFingerprint, buildFingerprintHeaders, type Fingerprint } from "./fingerprint.js";
+import type { GoogleSearchConfig } from "./transform/types.js";
 
 const log = createLogger("request");
 

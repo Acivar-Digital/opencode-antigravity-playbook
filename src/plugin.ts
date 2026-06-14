@@ -1,5 +1,5 @@
 import { exec } from "node:child_process";
-import { tool } from "@opencode-ai/plugin";
+import { tool } from "@opencode-ai/plugin/tool";
 import {
   ANTIGRAVITY_DEFAULT_PROJECT_ID,
   ANTIGRAVITY_ENDPOINT_FALLBACKS,
@@ -7,12 +7,12 @@ import {
   ANTIGRAVITY_PROVIDER_ID,
   getAntigravityHeaders,
   type HeaderStyle,
-} from "./constants";
-import { authorizeAntigravity, exchangeAntigravity } from "./antigravity/oauth";
-import type { AntigravityTokenExchangeResult } from "./antigravity/oauth";
-import { accessTokenExpired, isOAuthAuth, parseRefreshParts, formatRefreshParts } from "./plugin/auth";
-import { promptAddAnotherAccount, promptLoginMode, promptProjectId } from "./plugin/cli";
-import { ensureProjectContext } from "./plugin/project";
+} from "./constants.js";
+import { authorizeAntigravity, exchangeAntigravity } from "./antigravity/oauth.js";
+import type { AntigravityTokenExchangeResult } from "./antigravity/oauth.js";
+import { accessTokenExpired, isOAuthAuth, parseRefreshParts, formatRefreshParts } from "./plugin/auth.js";
+import { promptAddAnotherAccount, promptLoginMode, promptProjectId } from "./plugin/cli.js";
+import { ensureProjectContext } from "./plugin/project.js";
 import {
   startAntigravityDebugRequest, 
   logAntigravityDebugResponse,
@@ -24,35 +24,35 @@ import {
   isDebugEnabled,
   getLogFilePath,
   initializeDebug,
-} from "./plugin/debug";
+} from "./plugin/debug.js";
 import {
   buildThinkingWarmupBody,
   isGenerativeLanguageRequest,
   prepareAntigravityRequest,
   transformAntigravityResponse,
-} from "./plugin/request";
-import { resolveModelWithTier } from "./plugin/transform/model-resolver";
+} from "./plugin/request.js";
+import { resolveModelWithTier } from "./plugin/transform/model-resolver.js";
 import {
   isEmptyResponseBody,
   createSyntheticErrorResponse,
-} from "./plugin/request-helpers";
-import { EmptyResponseError } from "./plugin/errors";
-import { AntigravityTokenRefreshError, refreshAccessToken } from "./plugin/token";
-import { startOAuthListener, type OAuthListener } from "./plugin/server";
-import { clearAccounts, loadAccounts, saveAccounts, saveAccountsReplace } from "./plugin/storage";
-import { AccountManager, type ModelFamily, parseRateLimitReason, calculateBackoffMs, computeSoftQuotaCacheTtlMs } from "./plugin/accounts";
-import { createAutoUpdateCheckerHook } from "./hooks/auto-update-checker";
-import { loadConfig, initRuntimeConfig, type AntigravityConfig } from "./plugin/config";
-import { createSessionRecoveryHook, getRecoverySuccessToast } from "./plugin/recovery";
-import { checkAccountsQuota } from "./plugin/quota";
-import { initDiskSignatureCache } from "./plugin/cache";
-import { createProactiveRefreshQueue, type ProactiveRefreshQueue } from "./plugin/refresh-queue";
-import { initLogger, createLogger } from "./plugin/logger";
-import { initHealthTracker, getHealthTracker, initTokenTracker, getTokenTracker } from "./plugin/rotation";
-import { getComputeTracker } from "./plugin/compute";
-import { isClaudeThinkingModel, isGemini3Model } from "./plugin/transform/index";
-import { initAntigravityVersion } from "./plugin/version";
-import { executeSearch } from "./plugin/search";
+} from "./plugin/request-helpers.js";
+import { EmptyResponseError } from "./plugin/errors.js";
+import { AntigravityTokenRefreshError, refreshAccessToken } from "./plugin/token.js";
+import { startOAuthListener, type OAuthListener } from "./plugin/server.js";
+import { clearAccounts, loadAccounts, saveAccounts, saveAccountsReplace } from "./plugin/storage.js";
+import { AccountManager, type ModelFamily, parseRateLimitReason, calculateBackoffMs, computeSoftQuotaCacheTtlMs } from "./plugin/accounts.js";
+import { createAutoUpdateCheckerHook } from "./hooks/auto-update-checker/index.js";
+import { loadConfig, initRuntimeConfig, type AntigravityConfig } from "./plugin/config/index.js";
+import { createSessionRecoveryHook, getRecoverySuccessToast } from "./plugin/recovery.js";
+import { checkAccountsQuota } from "./plugin/quota.js";
+import { initDiskSignatureCache } from "./plugin/cache.js";
+import { createProactiveRefreshQueue, type ProactiveRefreshQueue } from "./plugin/refresh-queue.js";
+import { initLogger, createLogger } from "./plugin/logger.js";
+import { initHealthTracker, getHealthTracker, initTokenTracker, getTokenTracker } from "./plugin/rotation.js";
+import { getComputeTracker } from "./plugin/compute.js";
+import { isClaudeThinkingModel, isGemini3Model } from "./plugin/transform/index.js";
+import { initAntigravityVersion } from "./plugin/version.js";
+import { executeSearch } from "./plugin/search.js";
 import type {
   GetAuth,
   LoaderResult,
@@ -61,7 +61,7 @@ import type {
   PluginResult,
   ProjectContextResult,
   Provider,
-} from "./plugin/types";
+} from "./plugin/types.js";
 
 const MAX_OAUTH_ACCOUNTS = 10;
 const MAX_WARMUP_SESSIONS = 1000;

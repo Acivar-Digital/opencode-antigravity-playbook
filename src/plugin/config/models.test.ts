@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { OPENCODE_MODEL_DEFINITIONS } from "./models";
+import { OPENCODE_MODEL_DEFINITIONS } from "./models.js";
 
 const getModel = (name: string) => {
   const model = OPENCODE_MODEL_DEFINITIONS[name];

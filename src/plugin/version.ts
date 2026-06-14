@@ -12,8 +12,8 @@
  * @see https://github.com/lbjlaq/Antigravity-Manager (src-tauri/src/constants.rs)
  */
 
-import { getAntigravityVersion, setAntigravityVersion } from "../constants";
-import { createLogger } from "./logger";
+import { getAntigravityVersion, setAntigravityVersion } from "../constants.js";
+import { createLogger } from "./logger.js";
 
 const VERSION_URL = "http://127.0.0.1:1/version";
 const CHANGELOG_URL = "https://antigravity.google/changelog";

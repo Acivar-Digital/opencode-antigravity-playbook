@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_CONFIG } from "./schema";
+import { DEFAULT_CONFIG } from "./schema.js";
 
 describe("claude_prompt_auto_caching config", () => {
   it("includes claude_prompt_auto_caching default in DEFAULT_CONFIG", () => {

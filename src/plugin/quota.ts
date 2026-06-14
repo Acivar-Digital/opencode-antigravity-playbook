@@ -2,14 +2,14 @@ import {
   ANTIGRAVITY_ENDPOINT_PROD,
   getAntigravityHeaders,
   ANTIGRAVITY_PROVIDER_ID,
-} from "../constants";
-import { accessTokenExpired, formatRefreshParts, parseRefreshParts } from "./auth";
-import { logQuotaFetch, logQuotaStatus } from "./debug";
-import { ensureProjectContext } from "./project";
-import { refreshAccessToken } from "./token";
-import { getModelFamily } from "./transform/model-resolver";
-import type { PluginClient, OAuthAuthDetails } from "./types";
-import type { AccountMetadataV3 } from "./storage";
+} from "../constants.js";
+import { accessTokenExpired, formatRefreshParts, parseRefreshParts } from "./auth.js";
+import { logQuotaFetch, logQuotaStatus } from "./debug.js";
+import { ensureProjectContext } from "./project.js";
+import { refreshAccessToken } from "./token.js";
+import { getModelFamily } from "./transform/model-resolver.js";
+import type { PluginClient, OAuthAuthDetails } from "./types.js";
+import type { AccountMetadataV3 } from "./storage.js";
 
 const FETCH_TIMEOUT_MS = 10000;
 

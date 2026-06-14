@@ -4,7 +4,7 @@
  * Estimates the compute unit cost of outgoing requests based on prompt complexity,
  * history length, reasoning configurations, and model type.
  */
-import { isClaudeThinkingModel, isGemini3Model } from "./transform/index";
+import { isClaudeThinkingModel, isGemini3Model } from "./transform/index.js";
 
 export interface ComputeCostEstimate {
   estimatedCost: number; // In abstract compute units

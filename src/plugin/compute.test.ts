@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { estimateTokenCount, estimateRequestCost, ComputeTracker } from "./compute";
+import { estimateTokenCount, estimateRequestCost, ComputeTracker } from "./compute.js";
 
 describe("estimateTokenCount", () => {
   it("returns 0 for empty strings", () => {

@@ -10,8 +10,8 @@
 
 import * as crypto from "node:crypto";
 import * as os from "node:os";
-import { getAntigravityVersion } from "../constants";
-import { ANTIGRAVITY_CLIENT_ID } from "../constants";
+import { getAntigravityVersion } from "../constants.js";
+import { ANTIGRAVITY_CLIENT_ID } from "../constants.js";
 
 const ARCHITECTURES = ["x64", "arm64"];
 
