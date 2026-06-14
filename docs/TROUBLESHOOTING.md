@@ -117,6 +117,21 @@ Then restart OpenCode.
 
 > If you intentionally run beta channel, use `bun add opencode-antigravity-auth@beta` instead.
 
+### ESM Directory Import Conflict (ERR_UNSUPPORTED_DIR_IMPORT)
+
+**Error:**
+```
+Error [ERR_UNSUPPORTED_DIR_IMPORT]: Directory import '/path/to/opencode-antigravity-auth/dist/src/plugin' is not supported resolving ES modules imported from .../dist/index.js
+```
+
+**Why this happens:** In strict Node.js ESM mode, importing `./src/plugin` without an extension points to a directory (since both `/src/plugin/` and `/src/plugin.ts` exist), causing ESM load failure.
+
+**Fix:** Ensure the entrypoint `index.ts` uses explicit `.js` extensions for relative imports:
+```typescript
+export { AntigravityCLIOAuthPlugin, GoogleOAuthPlugin } from "./src/plugin.js";
+export { authorizeAntigravity, exchangeAntigravity } from "./src/antigravity/oauth.js";
+```
+
 ---
 
 ## Gemini CLI Permission Error

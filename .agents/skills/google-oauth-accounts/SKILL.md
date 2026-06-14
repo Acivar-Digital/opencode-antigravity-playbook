@@ -932,6 +932,18 @@ The debug log should show `Effective Model: gemini-3.5-flash-low` (not `gemini-3
 
 For stale Antigravity version or invalid SemVer errors, first try the **Version Patch Fix** above. If the issue persists, clear plugin caches and re-authenticate. [4]
 
+### ESM Directory Import Conflict (ERR_UNSUPPORTED_DIR_IMPORT)
+
+**The Problem:**
+In modern Node.js environments (which enforce strict ESM resolution), calling `import('./dist/index.js')` might fail with an `ERR_UNSUPPORTED_DIR_IMPORT` error pointing to `dist/src/plugin`. This occurs because there is both a folder named `src/plugin/` and a source file named `src/plugin.ts`. Without a file extension, Node resolves `./src/plugin` to the directory rather than the compiled module.
+
+**The Fix:**
+Ensure that the entry point `index.ts` uses explicit `.js` suffixes for relative imports from the `src/` directory (which TypeScript compiles natively while preserving resolving ability under `bundler` resolution mode):
+```typescript
+export { AntigravityCLIOAuthPlugin, GoogleOAuthPlugin } from "./src/plugin.js";
+export { authorizeAntigravity, exchangeAntigravity } from "./src/antigravity/oauth.js";
+```
+
 ## Plugin Compatibility
 
 ### oh-my-opencode

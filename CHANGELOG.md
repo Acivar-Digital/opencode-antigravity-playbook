@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1] - 2026-06-15
+
+### Fixed
+- **Index Specifier Resolution in ESM:** Added explicit `.js` suffixes (`./src/plugin.js` and `./src/antigravity/oauth.js`) in `index.ts` to prevent name collision with the `src/plugin` directory, resolving `ERR_UNSUPPORTED_DIR_IMPORT` in native Node.js ESM.
+- **Account Saving Filter Logic:** Fixed an issue in `src/plugin/storage.ts` where account objects without an explicit `email` property were stripped during the write-time banned/force-enable filtering, resolving mock test failures.
+- **Remote Host Deployment & Config Sync:** Synchronized `antigravity.json` config settings and deployed the patched package structure across the target Mac Mini (`yapilymm`) and VPS (`vps466a`) environments.
+
 ## [2.3.0] - 2026-06-14
 
 ### Added
