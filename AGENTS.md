@@ -1,5 +1,8 @@
 # Agent Instructions
 
+## Codebase Discovery Rule (MANDATORY FIRST STEP)
+Before executing code modifications, planning refactors, analyzing issues, or explaining code, you **MUST** run a codebase search (e.g., using `Grep` or `Glob` tools) or consult the codebase indexing files (`docs/implement-codebase.md`, `~/.config/opencode/skills/setup-codebase-indexing`) to orient yourself. Do NOT guess structural parameters, variables, or import configurations. Always ground your understanding using local file content search first.
+
 This project uses **bd** (beads) for issue tracking. Run `bd prime` for full workflow context.
 
 > **Architecture in one line:** Issues live in a local Dolt database
