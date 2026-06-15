@@ -1,0 +1,49 @@
+#!/bin/bash
+# .beads/hooks/post-commit
+# Tracked copy of .git/hooks/post-commit for git sync across machines.
+# Install: cp .beads/hooks/post-commit .git/hooks/post-commit && chmod +x .git/hooks/post-commit
+
+REPO_PATH=$(git rev-parse --show-toplevel)
+COMMIT_HASH=$(git rev-parse --short HEAD)
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+AUTHOR=$(git log -1 --format='%an')
+DATE=$(git log -1 --format='%ai' | cut -d' ' -f1)
+FILE_COUNT=$(git diff-tree --no-commit-id --name-only -r HEAD | wc -l)
+STATS=$(git diff --stat HEAD~1..HEAD 2>/dev/null | tail -1)
+COMMIT_MSG=$(git log -1 --format='%s')
+FILES_CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD | head -30)
+
+# Guard: bd must exist, beads dir must exist
+if ! command -v bd &>/dev/null; then exit 0; fi
+if [ ! -d "$REPO_PATH/.beads" ]; then exit 0; fi
+
+# Run in background to avoid blocking git
+(
+    CHECKPOINT_TITLE="Checkpoint: $DATE $COMMIT_HASH [$BRANCH] $COMMIT_MSG"
+
+    DESCRIPTION="Commit $COMMIT_HASH on $BRANCH by $AUTHOR.
+
+**Stats:** $STATS
+
+**Changed files ($FILE_COUNT):**
+$(echo "$FILES_CHANGED" | sed 's/^/- /')"
+
+    DESIGN="| Field | Value |
+|---|---|
+| Hash | $COMMIT_HASH |
+| Branch | $BRANCH |
+| Author | $AUTHOR |
+| Date | $DATE |
+| Files | $FILE_COUNT |
+| Stats | $STATS |"
+
+    bd create \
+        --title="$CHECKPOINT_TITLE" \
+        --type=task \
+        --priority=4 \
+        --description="$DESCRIPTION" \
+        --design="$DESIGN" \
+        2>/dev/null
+) &>/dev/null &
+
+disown

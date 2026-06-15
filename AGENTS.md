@@ -5,8 +5,8 @@ Before executing code modifications, planning refactors, analyzing issues, or ex
 
 This project uses **bd** (beads) for issue tracking. Run `bd prime` for full workflow context.
 
-> **Architecture in one line:** Issues live in a local Dolt database
-> (`.beads/dolt/`); cross-machine sync uses `bd dolt push/pull` (a
+> **Architecture in one line:** Issues live in a local embedded Dolt database
+> (`.beads/embeddeddolt/`); cross-machine sync uses `bd dolt push/pull` (a
 > git-compatible protocol), stored under `refs/dolt/data` on your git
 > remote — separate from `refs/heads/*` where your code lives.
 > `.beads/issues.jsonl` is a passive export, not the wire protocol.
@@ -71,6 +71,56 @@ bd close <id>         # Complete work
 - Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
 
 **Architecture in one line:** issues live in a local Dolt DB; sync uses `refs/dolt/data` on your git remote; `.beads/issues.jsonl` is a passive export. See https://github.com/gastownhall/beads/blob/main/docs/SYNC_CONCEPTS.md for details and anti-patterns.
+
+## Session Context Capture
+
+### On Session Start (MANDATORY)
+Before writing any code:
+1. Run `bd ready` and `bd list --status=in_progress` to find active work
+2. For each relevant issue, run `bd show <id>` and read the `DESCRIPTION`, `DESIGN`, and `NOTES` fields
+3. **Never re-discover already-solved problems** — the notes field exists precisely to prevent this
+4. Run `bd memories` for cross-cutting insights from past sessions
+
+### On Every Commit (MANDATORY)
+The post-commit hook auto-creates a checkpoint issue (priority 4) with commit metadata. The agent MUST enrich it:
+1. Identify the checkpoint issue created by the hook (latest priority-4 task)
+2. Update its `notes` with:
+   - What was tried and failed (so future sessions don't repeat it)
+   - What worked and why
+   - Environmental gotchas, edge cases, version-specific behavior
+   - Dependencies added/removed and reasons
+3. Update its `design` with:
+   - Architectural decisions made and rationale
+   - Trade-offs considered and rejected alternatives
+   - Patterns established or broken
+4. If working on a feature/bug issue (not a checkpoint), update that issue's `notes` instead
+5. Run `bd remember` for any cross-cutting insights worth keeping across repos
+
+### On Session End (MANDATORY)
+**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+
+**MANDATORY WORKFLOW:**
+
+1. **File issues for remaining work** - Create issues for anything that needs follow-up
+2. **Run quality gates** (if code changed) - Tests, linters, builds
+3. **Update issue status** - Close finished work, update in-progress items
+4. **Write session summary** - Update the active issue's `notes` with a concise session summary
+5. **PUSH TO REMOTE** - This is MANDATORY:
+   ```bash
+   git pull --rebase
+   git push
+   git status  # MUST show "up to date with origin"
+   ```
+6. **Clean up** - Clear stashes, prune remote branches
+7. **Verify** - All changes committed AND pushed
+8. **Hand off** - Provide context for next session
+
+**CRITICAL RULES:**
+- Work is NOT complete until `git push` succeeds
+- NEVER stop before pushing - that leaves work stranded locally
+- NEVER say "ready to push when you are" - YOU must push
+- If push fails, resolve and retry until it succeeds
+- Checkpoint issues (priority 4) should be bulk-closed during periodic cleanup — they are breadcrumbs, not backlog
 
 ## Session Completion
 
