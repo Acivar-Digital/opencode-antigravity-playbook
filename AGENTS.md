@@ -98,6 +98,15 @@ bd close <id>         # Complete work
 
 Guidance for AI agents working with this repository.
 
+## Local Codebase Indexing Setup (Added June 2026)
+This repository is configured to use local codebase indexing and semantic search under OpenCode using the `opencode-codebase-index` plugin.
+- **Embeddings Provider**: Routed via `mcpmart` gateway at `http://10.32.34.243:18000/v1/openai/embeddings` using `gemini-embedding-2` (authenticated via `Authorization: Bearer localfreegemini`).
+- **MRL / Dimensions**: Matryoshka Representation Learning is leveraged by truncating to 768 dimensions (instead of 3072) for 4x smaller indexes and faster latency with minimal accuracy loss.
+- **Custom Patches Applied**:
+  - Codebase index bundle files (`index.js`/`cli.js` in CJS and ESM inside both local `node_modules` and global `~/.cache/opencode/packages/opencode-codebase-index@latest/`) were patched to correctly send the `dimensions` parameter during `/embeddings` requests.
+  - Console warnings complaining about `baseUrl` not ending in `/v1` were commented out (downgraded to `console.debug` mapping) to ensure a silent, clutter-free OpenCode TUI interface.
+  - Details and reproduction steps are documented under `docs/implement-codebase.md`.
+
 ## Overview
 
 OpenCode plugin for Google Antigravity OAuth. Intercepts `fetch()` calls to `generativelanguage.googleapis.com`, transforms them to Antigravity format, and handles auth, quota, recovery, and multi-account rotation.
