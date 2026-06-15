@@ -55,3 +55,6 @@ opencode-better-antigravity-auth/
 admin/capture/certs/
 admin/capture/capture.jsonl
 admin/capture/analyze_output*.txt
+
+# OpenCode config and semantic search index
+.opencode/index/
