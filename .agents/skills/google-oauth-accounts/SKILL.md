@@ -649,6 +649,8 @@ export async function saveAccounts(storage) {
 
 Apply the same patch to `saveAccountsReplace`.
 
+> ⚠️ **CRITICAL TROUBLESHOOTING NOTE:** A missing patch inside `saveAccountsReplace` (but present in `saveAccounts`) will allow destructive writes (such as account deletion operations) to write the raw, unpatched in-memory storage representation back to the file. This can resurrect banned accounts or strip the force-enabled states on Emily's account. Always verify that BOTH functions in `storage.js` have the patch applied and that their patch counters match (2 matches total for `storage.js` when grep is run).
+
 #### Step 2 — Patch `plugin.js`: block the quota loop from re-disabling
 
 In `markStoredAccountVerificationRequired`, add an early return at the top:

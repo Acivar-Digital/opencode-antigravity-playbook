@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.4.1] - 2026-06-15
+
+### Fixed
+- **Missing Cache Patch for Deletion Operations:** Re-applied and verified the missing `saveAccountsReplace` cache patch in `storage.js` for `opencode-antigravity-auth` plugin. This ensures banned accounts are consistently stripped and force-enabled accounts (such as Emily) remain active even during destructive account replacement writes.
+- **Stale Rate Limits Clean-up:** Purged obsolete rate limit reset timestamps and reset active account routing indices in `antigravity-accounts.json` to prevent stuck selection loops.
+
 ## [2.4.0] - 2026-06-15
 
 ### Added
