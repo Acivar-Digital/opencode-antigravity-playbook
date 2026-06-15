@@ -4,7 +4,8 @@
 
 ### Added
 - **Local Codebase Indexing configuration & Matryoshka dimensions patch:** Added project-level `opencode.json` configuration and `.opencode/codebase-index.json` supporting local semantic codebase search via the `mcpmart` API Gateway. Patched `opencode-codebase-index` files (`dist/index.js`, `dist/cli.js`, `dist/index.cjs`, `dist/cli.cjs`) to correctly forward the `dimensions: this.modelInfo.dimensions` parameter in custom embeddings requests, enabling 768D Matryoshka Representation Learning (MRL) truncation.
-- **Retrieved & Synchronized Codebase Indexing Skills:** Copied global OpenCode skills `answer-codebase-indexing` and `setup-codebase-indexing` from the VPS to this local machine's configuration folder.
+- **Custom Provider baseUrl Warning Silencing:** Patched `opencode-codebase-index` files to comment out the default `console.warn` that outputted the `customProvider.baseUrl does not end with /v1` warning, keeping TUI and stdout/stderr completely clean when routing to custom gateways.
+- **Retrieved & Synchronized Codebase Indexing Skills:** Copied global OpenCode skills `answer-codebase-indexing` and `setup-codebase-indexing` from the VPS to this local machine's configuration folder and updated the setup instructions with the warnings silencing steps.
 
 ## [2.3.2] - 2026-06-15
 

@@ -77,8 +77,37 @@ The patch intercepts the request body construction and adds `dimensions: this.mo
         }),
 ```
 
-This patch must be applied to the following files in `node_modules/opencode-codebase-index/dist/`:
+This patch must be applied to the following files in `node_modules/opencode-codebase-index/dist/` and `~/.cache/opencode/packages/opencode-codebase-index@latest/node_modules/opencode-codebase-index/dist/`:
 *   `index.js`
 *   `cli.js`
 *   `index.cjs`
 *   `cli.cjs`
+
+---
+
+## 4. Custom Provider baseUrl Warning Silencing Patch
+By default, the `opencode-codebase-index` plugin checks if `customProvider.baseUrl` ends with `/v1`. If it doesn't (e.g. it ends with `/openai` as required for the mcpmart gateway), it outputs an annoying warning to stderr:
+```
+[codebase-index] Warning: customProvider.baseUrl does not end with an API version path like /v1...
+```
+This warning clutters stdout/stderr and prints to the TUI console. The patch comments out the warning call.
+
+### Match Block (JS / ESM & CJS)
+```javascript
+      if (!/\/v\d+\/?$/.test(customProvider.baseUrl)) {
+        console.warn(
+          `[codebase-index] Warning: customProvider.baseUrl ("${customProvider.baseUrl}") does not end with an API version path like /v1...`
+        );
+      }
+```
+
+### Target Patched Block
+```javascript
+      if (!/\/v\d+\/?$/.test(customProvider.baseUrl)) {
+        // console.debug(
+        //   `[codebase-index] Warning: customProvider.baseUrl ("${customProvider.baseUrl}") does not end with an API version path like /v1...`
+        // );
+      }
+```
+
+This patch must be applied to the same 4 files in `node_modules/` and `~/.cache/opencode/packages/`.
