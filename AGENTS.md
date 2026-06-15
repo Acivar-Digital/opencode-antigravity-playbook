@@ -121,6 +121,62 @@ The post-commit hook auto-creates a checkpoint issue (priority 4) with commit me
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
 - Checkpoint issues (priority 4) should be bulk-closed during periodic cleanup — they are breadcrumbs, not backlog
+
+### On Issue Resolution (MANDATORY)
+**Trigger:** The user explicitly acknowledges that an issue is resolved (e.g., "that's fixed", "it works", "good job", "thanks", "LGTM", "ship it", "done", "resolved", "perfect", "awesome", or similar affirmative confirmation).
+
+**Condition:** ONLY execute this workflow when the user has acknowledged the resolution. Do NOT execute if the user is still discussing, requesting changes, or has not confirmed.
+
+**MANDATORY WORKFLOW — execute ALL steps in order:**
+
+1. **Close the beads issue:**
+   ```bash
+   bd close <id> --reason "<what was done to resolve>"
+   ```
+
+2. **Update the beads-usage skill** (`~/.config/opencode/skills/beads-usage/SKILL.md`):
+   - If the resolution revealed a new pitfall, anti-pattern, or workflow improvement, add it to the relevant section
+   - If a new `bd` command pattern was discovered, add it to the Quick Reference table
+   - If an architectural decision was made, document it in the Architecture section
+   - Keep changes minimal and targeted — only add what was learned
+
+3. **Update CHANGELOG.md:**
+   - Add a new entry under the current version or create a new version section
+   - Follow the existing format: `### Fixed`, `### Added`, `### Changed`, `### Removed`
+   - One-line summary of what was resolved
+   - Reference the beads issue ID if applicable
+
+4. **Update README.md (if applicable):**
+   - If the resolution changes how users interact with the plugin, update the relevant section
+   - If a new feature was added, document it in the appropriate place
+   - If a troubleshooting scenario was discovered, add it to the Troubleshooting section
+   - Only update if the change is user-facing — skip for internal-only changes
+
+5. **Commit and push:**
+   ```bash
+   git add -A
+   git commit -m "<type>: <short description> (resolves <issue-id>)"
+   git pull --rebase
+   git push
+   git status  # MUST show "up to date with origin"
+   ```
+   - If `git remote -v` shows no remote, skip the push
+   - If push fails, resolve and retry until it succeeds
+
+6. **Sync skill to VPS (if VPS is reachable):**
+   ```bash
+   scp -o ConnectTimeout=5 -o BatchMode=yes \
+     ~/.config/opencode/skills/beads-usage/SKILL.md \
+     vps466a@10.32.34.243:~/.config/opencode/skills/beads-usage/SKILL.md
+   ```
+
+**CRITICAL RULES:**
+- This workflow is ONLY triggered by explicit user acknowledgment of resolution
+- If the user says "not yet", "wait", "there's still a problem", or similar — do NOT execute
+- Always close the beads issue first, then update docs, then push — in that order
+- CHANGELOG and README updates are mandatory when the resolution is user-facing
+- Skill updates are mandatory when new knowledge was gained
+- Push is mandatory when a remote exists — never leave work stranded locally
 <!-- END BEADS INTEGRATION -->
 # AGENTS.md
 
