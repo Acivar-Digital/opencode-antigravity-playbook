@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.5.0] - 2026-06-15
+
+### Added
+- **Session Context Capture system:** Added post-commit hook (`.git/hooks/post-commit` + tracked copy `.beads/hooks/post-commit`) that auto-creates a beads checkpoint issue (priority 4) on every commit with commit metadata (hash, branch, author, files changed, diff stats).
+- **On Issue Resolution workflow:** Mandatory 6-step workflow triggered when user explicitly acknowledges resolution: close beads issue → update beads-usage skill → update CHANGELOG → update README (if user-facing) → commit and push → sync skill to VPS.
+- **Session Context Capture section in AGENTS.md:** Mandatory conventions for session start (read notes/design), commit enrichment (what was tried/failed/worked), and session end (summary, push, cleanup).
+- **Checkpoint enrichment convention:** Agent must enrich auto-created P4 checkpoint issues with session context; periodic bulk-cleanup of checkpoints.
+
+### Changed
+- **beads-usage skill expanded:** Added embedded Dolt architecture (no server), post-commit hook architecture diagram, session context capture workflow, checkpoint enrichment, issue resolution workflow, and anti-patterns table.
+- **AGENTS.md consolidated:** Removed redundant "Session Completion" section; all session lifecycle rules now under "Session Context Capture".
+
 ## [2.4.1] - 2026-06-15
 
 ### Fixed

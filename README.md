@@ -21,6 +21,8 @@ Enable Opencode to authenticate against **Antigravity** (Google's IDE) via OAuth
 - **Google Search grounding** — enable web search for Gemini models (auto or always-on)
 - **Auto-recovery** — handles session errors and tool failures automatically
 - **Plugin compatible** — works alongside other OpenCode plugins (oh-my-opencode, dcp, etc.)
+- **AI Agent Memory System** — built-in session context capture via beads (post-commit hook auto-checkpoints, design/notes fields for session memory, issue resolution workflow with skill/changelog/readme auto-update)
+- **Local Codebase Indexing** — semantic search over codebase via opencode-codebase-index with Matryoshka 768D embeddings through mcpmart gateway
 
 ---
 
