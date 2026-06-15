@@ -1,0 +1,13 @@
+{
+  "embeddingProvider": "custom",
+  "customProvider": {
+    "baseUrl": "http://10.32.34.243:18000/v1/openai",
+    "model": "gemini-embedding-2",
+    "dimensions": 768,
+    "apiKey": "localfreegemini",
+    "maxTokens": 8192,
+    "timeoutMs": 30000,
+    "concurrency": 3,
+    "maxBatchSize": 64
+  }
+}

@@ -4,5 +4,8 @@
     "paths": [
       ".agents/skills"
     ]
-  }
+  },
+  "plugin": [
+    "opencode-codebase-index"
+  ]
 }

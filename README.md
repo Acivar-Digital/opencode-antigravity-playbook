@@ -274,6 +274,14 @@ Add this to your `~/.config/opencode/opencode.json`:
 
 ---
 
+## Local Codebase Indexing Setup
+
+The project can be configured for local semantic search and codebase indexing using `opencode-codebase-index` and the local `mcpmart` API Gateway.
+
+See [docs/implement-codebase.md](docs/implement-codebase.md) for full instructions, embedding models details, and the custom dimensions patch procedure.
+
+---
+
 ## Multi-Account Setup
 
 Add multiple Google accounts for a higher combined quota. The plugin automatically rotates between accounts when one is rate-limited.
