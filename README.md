@@ -563,6 +563,9 @@ OAuth callback requires browser to reach `localhost` on the machine running Open
 **VPS Mirroring:**
 If mirroring local configurations onto a remote VPS, ensure `~/.local/share/opencode/auth.json` is synced to the VPS. If Google is configured as an `"api"` provider type instead of `"oauth"`, the plugin will skip interception and trigger `API key not valid` errors.
 
+> [!WARNING]
+> Do NOT inject `"key": "dummy"` or other placeholder API keys in the Google section of `auth.json`. The `@ai-sdk/google` SDK validates the key locally and throws a client-side validation error before the plugin's `fetch` interceptor can intercept the request. The Google block should only contain `type`, `refresh`, `access`, and `expires` properties.
+
 *TUI Focus*: Running remote tasks headless via `opencode run` on a VPS can throw Google Cloud IAM permissions exceptions (`completeTask`). The interactive TUI mode is the primary supported path.
 
 **WSL2:**

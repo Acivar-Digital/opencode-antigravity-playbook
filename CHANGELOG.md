@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.3.2] - 2026-06-15
+
+### Fixed
+- **Google OAuth API Key Validation Error:** Removed the `"key": "dummy"` entry in the Google provider section of `auth.json` which triggered client-side validation failures in the `@ai-sdk/google` SDK (e.g., `API key not valid`) before requests could be intercepted by the plugin's `fetch` hook.
+
 ## [2.3.1] - 2026-06-15
 
 ### Fixed

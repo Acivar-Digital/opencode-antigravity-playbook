@@ -587,11 +587,23 @@ Fix:
    ```
    Also verify `account_selection_strategy` is set in `antigravity.json` (not null/missing). Without a strategy, the plugin defaults to `sticky` and will keep retrying the same account.
 
-### VPS Mirroring / Remote Setup (auth.json mismatch)
+### VPS Mirroring / Remote Setup (auth.json mismatch / key: dummy)
 
 **Symptom:** OpenCode on the VPS fails immediately with `API key not valid` or fallback errors even though the accounts were synced.
-**Root cause:** OpenCode checks `~/.local/share/opencode/auth.json` to verify the provider credential type. If the VPS has Google configured as `api` type (e.g., from dummy credentials) instead of `oauth` type, the plugin's auth loader skips intercepting requests.
-**Fix:** Sync the `auth.json` file from the local machine (which has Google set to `"type": "oauth"`) to the VPS, or remove the Google key from the VPS using `opencode providers logout` and re-authenticate via OAuth.
+**Root cause:** 
+1. OpenCode checks `~/.local/share/opencode/auth.json` to verify the provider credential type. If the VPS has Google configured as `api` type (e.g., from dummy credentials) instead of `oauth` type, the plugin's auth loader skips intercepting requests.
+2. If the Google section in `auth.json` contains `"key": "dummy"` or other placeholder values, the client-side validation in `@ai-sdk/google` checks this key and throws `API key not valid` before the plugin interceptor gets control.
+**Fix:** 
+1. Sync the `auth.json` file from the local machine (which has Google set to `"type": "oauth"`) to the VPS.
+2. Remove any `"key"` field entirely from the google section of `auth.json`. The google section should only contain `type`, `refresh`, `access`, and `expires` properties. Example:
+   ```json
+   "google": {
+     "type": "oauth",
+     "refresh": "YOUR_REFRESH_TOKEN|...",
+     "access": "",
+     "expires": 0
+   }
+   ```
 
 **TUI-Only Focus Note:** In remote VPS environments, full tool-use via headless execution commands (like `opencode run`) may trigger GCP project permission errors (e.g. `cloudaicompanion.instances.completeTask`). The interactive TUI interface bypasses these constraints and remains the main supported mode of operation. Do not attempt to fix API-level completeTask errors when TUI runs cleanly.
 
