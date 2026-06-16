@@ -640,7 +640,7 @@ it("removes x-api-key header", () => {
       expect(headers.get("x-goog-user-project")).toBeNull();
     });
 
-    it("removes x-goog-user-project header for antigravity-cli headerStyle", () => {
+    it("sets x-goog-user-project header for antigravity-cli headerStyle with projectId", () => {
       const result = prepareAntigravityRequest(
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
         { method: "POST", body: JSON.stringify({ contents: [] }), headers: { "x-goog-user-project": "my-project" } },
@@ -650,7 +650,7 @@ it("removes x-api-key header", () => {
         "antigravity-cli"
       );
       const headers = result.init.headers as Headers;
-      expect(headers.get("x-goog-user-project")).toBeNull();
+      expect(headers.get("x-goog-user-project")).toBe(mockProjectId);
     });
 
     it("applies Chrome telemetry spoofing for antigravity-cli headerStyle", () => {

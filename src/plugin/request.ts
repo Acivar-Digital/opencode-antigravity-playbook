@@ -792,10 +792,14 @@ export function prepareAntigravityRequest(
 
   headers.set("Authorization", `Bearer ${accessToken}`);
   headers.delete("x-api-key");
-  // Strip x-goog-user-project header to prevent 403 auth/license conflicts.
-  // This header is added by OpenCode/AI SDK and can force project-level checks
-  // that are not required for Antigravity/Antigravity CLI OAuth requests.
-  headers.delete("x-goog-user-project");
+  // For Antigravity CLI models with a user projectId, set the project header
+  // so Google routes the request to the correct project. For managed Antigravity
+  // mode, strip the header to avoid 403 auth/license conflicts with personal projects.
+  if (headerStyle === "antigravity-cli" && projectId?.trim()) {
+    headers.set("x-goog-user-project", projectId.trim());
+  } else {
+    headers.delete("x-goog-user-project");
+  }
 
   const match = input.match(/\/models\/([^:]+):(\w+)/);
   if (!match) {

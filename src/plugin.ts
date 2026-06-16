@@ -1976,11 +1976,18 @@ export const createAntigravityPlugin = (providerId: string) => async (
               }
 
               try {
+                // For Antigravity CLI models, use the account-level projectId
+                // (user's own GCP project) instead of the managed project context.
+                // This enables CLI models like gemini-4-flash to work with the
+                // user's project where the Gemini API is enabled.
+                const effectiveProjectId = headerStyle === "antigravity-cli" && account.parts.projectId
+                  ? account.parts.projectId
+                  : projectContext.effectiveProjectId;
                 const prepared = prepareAntigravityRequest(
                   input,
                   init,
                   accessToken,
-                  projectContext.effectiveProjectId,
+                  effectiveProjectId,
                   currentEndpoint,
                   headerStyle,
                   forceThinkingRecovery,

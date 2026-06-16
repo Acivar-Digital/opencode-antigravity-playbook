@@ -7,6 +7,8 @@ interface ModelTest {
 
 const MODELS: ModelTest[] = [
   // Antigravity CLI (direct Google API)
+  { model: "google/gemini-3-flash-preview", category: "antigravity-gemini" },
+  { model: "google/gemini-2.5-flash", category: "antigravity-gemini" },
 
   // Antigravity Gemini
   { model: "google/antigravity-gemini-3-pro-low", category: "antigravity-gemini" },
