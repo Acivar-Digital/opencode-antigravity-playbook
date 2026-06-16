@@ -170,8 +170,6 @@ Current storage uses schema v4. Important fields include:
     {
       "email": "user@gmail.com",
       "refreshToken": "...",
-      "projectId": "...",
-      "managedProjectId": "...",
       "addedAt": 1710000000000,
       "lastUsed": 1710000000000,
       "enabled": true,
@@ -215,6 +213,8 @@ Current storage uses schema v4. Important fields include:
   }
 }
 ```
+
+**Important:** `refreshToken` should be a bare token with NO pipe-delimited `projectId` or `managedProjectId` segments. The `projectId` and `managedProjectId` top-level fields should also be omitted. Project resolution is handled entirely by Google's API via `ANTIGRAVITY_DEFAULT_PROJECT_ID`. User-supplied project IDs from OAuth flows are personal GCP projects that lack the Cloud Code Assist API and will cause 403/429 cascades.
 
 Redact these fields in all outputs:
 
@@ -431,6 +431,8 @@ Use this matrix before rotating or resetting accounts.
 | No HTTP requests in debug logs (0 POST/GET entries) | Plugin stuck in account selection loop, never reaches the network layer | Reset `activeIndex`; verify `account_selection_strategy` is configured; check version patch is applied |
 | `round-robin` rotation stuck on single account | The cursor indexed into the filtered available list rather than the full list, causing mod limits to loop on the same active index when other accounts were rate-limited | Update to version >= 2.0.0 (or fix `getNextForFamily` in `accounts.ts` to scan across the full accounts array starting from the cursor) |
 | Round-robin burning tokens on exhausted accounts | `weeklyCapExhausted` was set per-group (sticky poison) — one exhausted model blocked all models in the group, and round-robin kept retrying | Fixed: quota is now per-model. Only the exhausted model is blocked. Round-robin no longer pre-filters by soft quota — it lets Google say no. |
+| 403 `API not enabled in project` + 429 `QUOTA_EXHAUSTED` cascade on all endpoints | User-supplied `projectId` in refresh token is a personal GCP project lacking Cloud Code Assist API | Strip `projectId`/`managedProjectId` from all refresh tokens and top-level account fields. `ensureProjectContext()` always uses `ANTIGRAVITY_DEFAULT_PROJECT_ID` — never trusts user-supplied project IDs. See "User-Supplied Project ID Rejection" section below. |
+| `quotaUser=undefined` in debug logs | Vestigial field — `Fingerprint.quotaUser` is declared in the interface but never populated by `generateFingerprint()` or `collectCurrentFingerprint()` | Cosmetic only. No functional impact. Either remove the debug log line at `plugin.ts:1894` or populate the field from email hash. |
 
 Do not rotate accounts for schema/tool/model `400` errors unless the account is also showing auth/quota/rate-limit symptoms.
 
@@ -578,6 +580,33 @@ Fix:
   "refreshToken": "...",
   "projectId": "your-project-id"
 }
+```
+
+### User-Supplied Project ID Rejection (403 + 429 Cascade)
+
+**Symptom:** Debug logs show `403 Forbidden` with message *"Gemini for Google Cloud API has not been used in project X before or it is disabled"*, followed by `429 Too Many Requests` on fallback endpoints, then another 403 on prod. The `Project:` field in the debug info shows a non-Google-managed project name (e.g. `rclonecreateownuserid`). `quotaUser=undefined` may also appear.
+
+**Root cause:** The account's refresh token contains a user-supplied `projectId` (second pipe-delimited segment, e.g. `refreshToken|rclonecreateownuserid|`). This is typically a personal Google Cloud project that does NOT have the `cloudaicompanion.googleapis.com` (Gemini for Google Cloud) API enabled. When `ensureProjectContext()` fails to resolve a managed project via the API, it falls back to this bad project ID.
+
+**Diagnosis:**
+```bash
+# Check which accounts have project IDs embedded in refresh tokens
+jq '.accounts[] | {email, projectId, managedProjectId, refreshToken: (.refreshToken | split("|") | length)}' ~/.config/opencode/antigravity-accounts.json
+# refreshToken with 3 segments = has projectId + managedProjectId
+# refreshToken with 2 segments = has projectId only
+# refreshToken with 1 segment = clean (recommended)
+```
+
+**Fix (configured as of 2026-06-16):**
+1. Strip all `projectId` and `managedProjectId` segments from refresh tokens — bare tokens only
+2. Remove top-level `projectId` and `managedProjectId` fields from all accounts
+3. `ensureProjectContext()` in `project.ts` now **always** uses `ANTIGRAVITY_DEFAULT_PROJECT_ID` (`rising-fact-p41fc`) and never trusts user-supplied project IDs
+4. Managed project resolution is handled entirely by Google's `loadCodeAssist` API
+
+If you see this error again, re-verify the accounts file is clean:
+```bash
+jq '.accounts[].refreshToken' ~/.config/opencode/antigravity-accounts.json
+# Should show bare tokens with no pipe-delimited segments
 ```
 
 ### All accounts rate-limited
@@ -1042,8 +1071,8 @@ For each account to sync:
 
 1. Find the account JSON in `/home/yapilwsl/.antigravity_tools/accounts/{uuid}.json`.
 2. Extract email from `email` field.
-3. Copy `token.refresh_token` into `refreshToken` (OpenCode schema).
-4. Copy `token.project_id` into `projectId` (needed for Gemini CLI quota).
+3. Copy `token.refresh_token` into `refreshToken` (OpenCode schema) — **strip any pipe-delimited `projectId` or `managedProjectId` segments**. The refresh token should be bare (no `|project|managedProject` suffix).
+4. **Do NOT copy `token.project_id`** — user-supplied project IDs are personal GCP projects that lack Cloud Code Assist API and cause 403/429 cascades. Project resolution is handled by Google's API via `ANTIGRAVITY_DEFAULT_PROJECT_ID`.
 5. Set `enabled: true`.
 6. Set `addedAt` and `lastUsed` to the current timestamp in milliseconds.
 7. **Preserve the `fingerprint` object** if it already exists in the OpenCode entry. If creating a new entry, the plugin will auto-generate a fingerprint on first use.
