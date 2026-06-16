@@ -79,6 +79,19 @@ function wait(ms: number): Promise<void> {
 }
 
 /**
+ * Generates a synthetic project ID for use when managed project resolution fails.
+ * Mirrors the implementation in request.ts to avoid circular imports.
+ */
+function generateSyntheticProjectId(): string {
+  const adjectives = ["useful", "bright", "swift", "calm", "bold"];
+  const nouns = ["fuze", "wave", "spark", "flow", "core"];
+  const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+  const randomPart = crypto.randomUUID().slice(0, 5).toLowerCase();
+  return `${adj}-${noun}-${randomPart}`;
+}
+
+/**
  * Extracts the cloudaicompanion project id from loadCodeAssist responses.
  */
 function extractManagedProjectId(payload: LoadCodeAssistPayload | null): string | undefined {
@@ -284,9 +297,13 @@ export async function ensureProjectContext(auth: OAuthAuthDetails): Promise<Proj
       return persistManagedProject(provisionedProjectId);
     }
 
-    log.warn("Failed to resolve or provision managed project — using default project ID");
+    // Generate a synthetic project ID instead of using the hardcoded default.
+    // The default (ANTIGRAVITY_DEFAULT_PROJECT_ID) can become stale/revoked, causing
+    // 403 IAM_PERMISSION_DENIED loops that overwhelm the TUI with error responses.
+    const syntheticId = generateSyntheticProjectId();
+    log.warn("Failed to resolve or provision managed project — using synthetic project ID", { syntheticId });
 
-    return { auth, effectiveProjectId: fallbackProjectId };
+    return { auth, effectiveProjectId: syntheticId };
   };
 
   if (!cacheKey) {

@@ -12,7 +12,7 @@ import { authorizeAntigravity, exchangeAntigravity } from "./antigravity/oauth.j
 import type { AntigravityTokenExchangeResult } from "./antigravity/oauth.js";
 import { accessTokenExpired, isOAuthAuth, parseRefreshParts, formatRefreshParts } from "./plugin/auth.js";
 import { promptAddAnotherAccount, promptLoginMode, promptProjectId } from "./plugin/cli.js";
-import { ensureProjectContext } from "./plugin/project.js";
+import { ensureProjectContext, invalidateProjectContextCache } from "./plugin/project.js";
 import {
   startAntigravityDebugRequest, 
   logAntigravityDebugResponse,
@@ -2290,6 +2290,21 @@ export const createAntigravityPlugin = (providerId: string) => async (
                     pushDebug(`verification-required: disabled account ${account.index}`);
                     getHealthTracker().recordFailure(account.index);
 
+                    lastFailure = createFailureContext(response);
+                    shouldSwitchAccount = true;
+                    break;
+                  }
+
+                  // If the 403 is due to project-level IAM denial (stale/revoked project ID),
+                  // invalidate the cached project context so the next attempt will re-resolve.
+                  // This prevents cascading 403 loops that overwhelm the TUI with error responses.
+                  if (errorBodyText.includes("IAM_PERMISSION_DENIED") && errorBodyText.includes("projects/")) {
+                    invalidateProjectContextCache(authRecord.refresh);
+                    pushDebug(`iam-permission-denied: invalidated project cache for account ${account.index}, will re-resolve`);
+                    await showToast(
+                      `Project access denied — re-resolving project ID...`,
+                      "warning",
+                    );
                     lastFailure = createFailureContext(response);
                     shouldSwitchAccount = true;
                     break;
