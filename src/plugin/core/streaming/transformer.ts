@@ -47,7 +47,7 @@ export function transformStreamingPayload(
           const transformed = transformThinkingParts
             ? transformThinkingParts(parsed.response)
             : parsed.response;
-          return `data: ${JSON.stringify(transformed)}`;
+          return `data: ${JSON.stringify({ ...parsed, response: transformed })}`;
         }
       } catch (_) {}
       return line;
@@ -217,7 +217,7 @@ export function transformSseLine(
       const transformed = callbacks.transformThinkingParts
         ? callbacks.transformThinkingParts(response)
         : response;
-      return `data: ${JSON.stringify(transformed)}`;
+      return `data: ${JSON.stringify({ ...parsed, response: transformed })}`;
     }
   } catch (_) {}
   return line;
