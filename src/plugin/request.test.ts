@@ -436,6 +436,25 @@ describe("request.ts", () => {
       expect(result).toContain("hello");
     });
 
+    it("unwraps v1internal response wrapper in streaming data", () => {
+      const payload = {
+        response: {
+          candidates: [{
+            content: {
+              parts: [{ text: "hello" }]
+            }
+          }]
+        },
+        traceId: "abc123"
+      };
+      const line = `data: ${JSON.stringify(payload)}`;
+      const result = callTransformSseLine(line);
+      expect(result).toContain("data:");
+      expect(result).toContain("hello");
+      expect(result).not.toContain('"response"');
+      expect(result).not.toContain("traceId");
+    });
+
     it("transforms thinking parts in streaming data", () => {
       const payload = {
         candidates: [{
@@ -464,6 +483,17 @@ describe("request.ts", () => {
       const result = transformStreamingPayload(input);
       expect(result).toContain("event: message");
       expect(result).toContain("data: [DONE]");
+    });
+
+    it("unwraps v1internal response wrapper in multi-line payload", () => {
+      const line1 = `data: ${JSON.stringify({ response: { candidates: [{ content: { parts: [{ text: "Hel" }] } }] }, traceId: "t1" })}`;
+      const line2 = `data: ${JSON.stringify({ response: { candidates: [{ content: { parts: [{ text: "Hello" }] } }] }, traceId: "t2" })}`;
+      const input = `${line1}\n${line2}\n`;
+      const result = transformStreamingPayload(input);
+      expect(result).toContain("Hel");
+      expect(result).toContain("Hello");
+      expect(result).not.toContain('"response"');
+      expect(result).not.toContain("traceId");
     });
 
     it("preserves line structure", () => {
