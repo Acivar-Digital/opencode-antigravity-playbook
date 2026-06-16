@@ -112,9 +112,7 @@ async function loadProjectId(accessToken) {
 function classifyGroup(modelName) {
   const lower = modelName.toLowerCase();
   if (lower.includes("claude")) return "claude";
-  if (!lower.includes("gemini-3")) return null;
-  if (lower.includes("flash")) return "gemini-flash";
-  return "gemini-pro";
+  return "gemini";
 }
 
 function updateGroup(groups, group, remainingFraction, resetTime) {
@@ -140,7 +138,7 @@ function updateGroup(groups, group, remainingFraction, resetTime) {
       }
     }
   }
-  
+
   // Weekly cap logic
   if (entry.resetTime) {
     const ts = Date.parse(entry.resetTime);
@@ -152,18 +150,18 @@ function updateGroup(groups, group, remainingFraction, resetTime) {
   } else {
     entry.weeklyCapExhausted = false;
   }
-  
+
   groups[group] = entry;
 }
 
-function printGroup(label, entry) {
-  if (!entry || !entry.modelCount) return;
-  const remaining = typeof entry.remainingFraction === "number" ? Math.round(entry.remainingFraction * 100) : null;
+function printModelQuota(modelName, mq) {
+  if (!mq) return;
+  const remaining = typeof mq.remainingFraction === "number" ? Math.round(mq.remainingFraction * 100) : null;
   const status = remaining === null ? "UNKNOWN" : remaining <= 0 ? "LIMITED" : "OK";
   const details = [];
   if (remaining !== null) details.push(`remaining ${remaining}%`);
-  if (entry.resetTime) {
-    const delta = Date.parse(entry.resetTime) - Date.now();
+  if (mq.resetTime) {
+    const delta = Date.parse(mq.resetTime) - Date.now();
     if (delta <= 0) {
       details.push("resets now");
     } else {
@@ -173,8 +171,9 @@ function printGroup(label, entry) {
       details.push(`resets in ${hours}h ${minutes}m`);
     }
   }
+  if (mq.weeklyCapExhausted) details.push("weekly cap");
   const suffix = details.length ? ` (${details.join(", ")})` : "";
-  console.log(`   ${label}: ${status}${suffix}`);
+  console.log(`   ${modelName}: ${status}${suffix}`);
 }
 
 async function run() {
@@ -238,22 +237,27 @@ async function run() {
       }
 
       const data = await response.json();
-      const groups = {};
       const models = data.models || {};
+      const perModel = {};
       for (const [modelName, info] of Object.entries(models)) {
-        const group = classifyGroup(modelName);
-        if (!group) continue;
         if (!info || !info.quotaInfo) continue;
         const remaining = info.quotaInfo.remainingFraction ?? 0;
-        updateGroup(groups, group, remaining, info.quotaInfo.resetTime);
+        const resetTime = info.quotaInfo.resetTime;
+        const resetMs = resetTime ? Date.parse(resetTime) : NaN;
+        const weeklyCapExhausted = Number.isFinite(resetMs) && (resetMs - Date.now() > 12 * 60 * 60 * 1000);
+        perModel[modelName] = {
+          remainingFraction: remaining,
+          resetTime: resetTime || "",
+          weeklyCapExhausted,
+        };
+      }
+
+      for (const [modelName, mq] of Object.entries(perModel)) {
+        printModelQuota(modelName, mq);
       }
       
-      printGroup("Claude", groups["claude"]);
-      printGroup("Gemini 3 Pro", groups["gemini-pro"]);
-      printGroup("Gemini 3 Flash", groups["gemini-flash"]);
-      
       // Update account in payload
-      account.cachedQuota = groups;
+      account.cachedQuota = perModel;
       account.cachedQuotaUpdatedAt = Date.now();
       hasUpdates = true;
       console.log(`   ✓ Updated cached quota`);
@@ -284,15 +288,12 @@ async function run() {
         for (const { account } of selected) {
           if (account.email && legacyState.accounts[account.email] && account.cachedQuota) {
             const models = [];
-            for (const [group, data] of Object.entries(account.cachedQuota)) {
-              let family = group;
-              if (group === "gemini-pro") family = "gemini_pro";
-              if (group === "gemini-flash") family = "gemini_flash";
-              
+            for (const [modelName, mq] of Object.entries(account.cachedQuota)) {
               models.push({
-                family: family,
-                remainingFraction: data.remainingFraction,
-                resetTime: data.resetTime || ""
+                model: modelName,
+                remainingFraction: mq.remainingFraction,
+                resetTime: mq.resetTime || "",
+                weeklyCapExhausted: mq.weeklyCapExhausted || false,
               });
             }
             legacyState.accounts[account.email].models = models;

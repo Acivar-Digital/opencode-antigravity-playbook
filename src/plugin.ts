@@ -159,8 +159,8 @@ async function triggerAsyncQuotaRefreshForAccount(
     
     const results = await checkAccountsQuota([singleAccount], client, providerId);
     
-    if (results[0]?.status === "ok" && results[0]?.quota?.groups) {
-      accountManager.updateQuotaCache(accountIndex, results[0].quota.groups);
+    if (results[0]?.status === "ok" && results[0]?.quota?.models) {
+      accountManager.updateQuotaCache(accountIndex, results[0].quota.models);
       accountManager.requestSaveToDisk();
     }
   } catch (err) {
@@ -2697,35 +2697,31 @@ export const createAntigravityPlugin = (providerId: string) => async (
                     };
 
                     // Display Antigravity Quota
-                    const hasAntigravity = res.quota && Object.keys(res.quota.groups).length > 0;
+                    const hasAntigravity = res.quota && Object.keys(res.quota.models).length > 0;
                     console.log(`\n  ┌─ Antigravity Quota`);
                     if (!hasAntigravity) {
                       const errorMsg = res.quota?.error || "No quota information available";
                       console.log(`     └─ ${errorMsg}`);
                     } else {
-                      const groups = res.quota!.groups;
-                      const groupEntries = [
-                        { name: "Claude", data: groups.claude },
-                        { name: "Gemini 3 Pro", data: groups["gemini-pro"] },
-                        { name: "Gemini 3 Flash", data: groups["gemini-flash"] },
-                      ].filter(g => g.data);
-                      
-                      groupEntries.forEach((g, idx) => {
-                        const isLast = idx === groupEntries.length - 1;
+                      const models = res.quota!.models;
+                      const entries = Object.entries(models);
+                      entries.forEach(([modelName, mq], idx) => {
+                        const isLast = idx === entries.length - 1;
                         const connector = isLast ? "└─" : "├─";
-                        const bar = createProgressBar(g.data!.remainingFraction);
-                        const reset = formatReset(g.data!.resetTime);
-                        const modelName = g.name.padEnd(29);
-                        console.log(`     ${connector} ${modelName} ${bar}${reset}`);
+                        const bar = createProgressBar(mq.remainingFraction);
+                        const reset = formatReset(mq.resetTime);
+                        const weekly = mq.weeklyCapExhausted ? " [weekly cap]" : "";
+                        const displayName = modelName.padEnd(32);
+                        console.log(`     ${connector} ${displayName} ${bar}${reset}${weekly}`);
                       });
                     }
                     console.log("");
 
                     // Cache quota data for soft quota protection
-                    if (res.quota?.groups) {
+                    if (res.quota?.models) {
                       const acc = existingStorage.accounts[res.index];
                       if (acc) {
-                        acc.cachedQuota = res.quota.groups;
+                        acc.cachedQuota = res.quota.models;
                         acc.cachedQuotaUpdatedAt = Date.now();
                         storageUpdated = true;
                       }
@@ -2734,7 +2730,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
                     if (res.updatedAccount) {
                       existingStorage.accounts[res.index] = {
                         ...res.updatedAccount,
-                        cachedQuota: res.quota?.groups,
+                        cachedQuota: res.quota?.models,
                         cachedQuotaUpdatedAt: Date.now(),
                       };
                       storageUpdated = true;

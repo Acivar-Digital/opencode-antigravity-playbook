@@ -90,23 +90,30 @@ It supports:
 - health score tracking
 - token bucket tracking
 - LRU freshness
-- soft quota protection
+- per-model quota tracking (one pool per model, not grouped)
 - rate-limit reset tracking
 - cooldowns
 - consecutive failure TTL
 - PID offset for parallel agents
 - quota cache refresh [2][3]
 
-### Dual Gemini quota pools
+### Per-model quota tracking
 
-For Gemini models, the plugin can use two independent quota pools per account:
+Quota is tracked **per model**, not grouped by family. Each account stores a `cachedQuota` map keyed by model name:
 
-| Quota Pool | When Used |
-| --- | --- |
-| Antigravity | Default for Gemini requests |
-| Gemini CLI | Automatic fallback between Antigravity and Gemini CLI in both directions |
+```json
+{
+  "cachedQuota": {
+    "gemini-3.1-pro-preview": { "remainingFraction": 0.91, "resetTime": "2026-06-16T04:55:54Z" },
+    "gemini-3-flash-preview": { "remainingFraction": 0.40, "resetTime": "2026-06-16T04:55:54Z" },
+    "claude-opus-4-6": { "remainingFraction": 0.99, "resetTime": "2026-06-20T00:28:41Z" }
+  }
+}
+```
 
-Gemini quota fallback is automatic in current versions; `quota_fallback` is deprecated and ignored for compatibility. [3][6]
+**Design principle: let Google tell the plugin "no" — do not predict.** The plugin does not preemptively skip accounts based on cached quota. If an account is exhausted for one model, only that model is affected. Other models on the same account remain available. When Google returns a rate limit, the plugin records it and rotates.
+
+Round-robin selection does **not** check soft quota thresholds — it picks the next enabled account and lets the request fly. Hybrid and sticky paths may still use cached data as a safety net.
 
 ### Payload and schema hardening
 
@@ -190,9 +197,9 @@ Current storage uses schema v4. Important fields include:
       },
       "fingerprintHistory": [],
       "cachedQuota": {
-        "claude": { "remainingFraction": 1, "resetTime": "2026-05-31T05:55:26Z", "modelCount": 1 },
-        "gemini-pro": { "remainingFraction": 1, "resetTime": "2026-05-31T05:55:23Z", "modelCount": 1 },
-        "gemini-flash": { "remainingFraction": 1, "resetTime": "2026-05-31T05:55:23Z", "modelCount": 1 }
+        "gemini-3.1-pro-preview": { "remainingFraction": 1, "resetTime": "2026-05-31T05:55:23Z" },
+        "gemini-3-flash-preview": { "remainingFraction": 1, "resetTime": "2026-05-31T05:55:23Z" },
+        "claude-opus-4-6": { "remainingFraction": 1, "resetTime": "2026-05-31T05:55:26Z" }
       },
       "cachedQuotaUpdatedAt": 1710000000000,
       "verificationRequired": false,
@@ -344,23 +351,21 @@ Create or edit `~/.config/opencode/antigravity.json` or `.opencode/antigravity.j
 | `failure_ttl_seconds` | TTL before consecutive failures expire |
 | `request_jitter_max_ms` | Random delay before each request; use sparingly |
 
-### Soft quota protection
+### Per-model quota behavior
 
 ```json
 {
-  "soft_quota_threshold_percent": 90,
-  "quota_refresh_interval_minutes": 15,
-  "soft_quota_cache_ttl_minutes": "auto"
+  "quota_refresh_interval_minutes": 15
 }
 ```
 
 | Option | Meaning |
 | --- | --- |
-| `soft_quota_threshold_percent` | Skip accounts when usage reaches this percent |
-| `quota_refresh_interval_minutes` | Background quota refresh interval |
-| `soft_quota_cache_ttl_minutes` | How long quota cache is considered fresh |
+| `quota_refresh_interval_minutes` | Background quota refresh interval (per-model) |
 
-`100` disables soft quota protection. `auto` derives cache freshness from the refresh interval. [3]
+`soft_quota_threshold_percent` and `soft_quota_cache_ttl_minutes` are **ignored in round-robin mode** as of the per-model refactor. Round-robin picks the next enabled account and lets Google say no — it does not preemptively skip accounts based on cached quota. Hybrid and sticky paths may still reference cached data.
+
+The `cachedQuota` map is updated in the background via `fetchAvailableModels` and stored per-model. Use `admin/health --live` to see real per-model `remainingFraction` and `weeklyCapExhausted` status.
 
 ### Model behavior
 
@@ -424,7 +429,8 @@ Use this matrix before rotating or resetting accounts.
 | `404 Not Found` with `Effective Model: gemini-3.5-flash` | Wrong API model name for Gemini 3.5 Flash | Patch model-resolver.js to use `gemini-3.5-flash-low` instead of `gemini-3.5-flash` (see Gemini 3.5 Flash Model Resolution Fix below) |
 | `All accounts rate-limited` with snapshot showing all `ready` | Active index stuck on a rate-limited account; plugin loops through accounts without sending HTTP requests | Reset `activeIndex` and `activeIndexByFamily` to a healthy account index; check that `account_selection_strategy` is set (not null) |
 | No HTTP requests in debug logs (0 POST/GET entries) | Plugin stuck in account selection loop, never reaches the network layer | Reset `activeIndex`; verify `account_selection_strategy` is configured; check version patch is applied |
-| `round-robin` rotation stuck on single account | The cursor indexed into the filtered available list rather than the full list, causing mod limits to loop on the same active index when other accounts were rate-limited or over-quota | Update to version >= 2.0.0 (or fix `getNextForFamily` in `accounts.ts` to scan across the full accounts array starting from the cursor) |
+| `round-robin` rotation stuck on single account | The cursor indexed into the filtered available list rather than the full list, causing mod limits to loop on the same active index when other accounts were rate-limited | Update to version >= 2.0.0 (or fix `getNextForFamily` in `accounts.ts` to scan across the full accounts array starting from the cursor) |
+| Round-robin burning tokens on exhausted accounts | `weeklyCapExhausted` was set per-group (sticky poison) — one exhausted model blocked all models in the group, and round-robin kept retrying | Fixed: quota is now per-model. Only the exhausted model is blocked. Round-robin no longer pre-filters by soft quota — it lets Google say no. |
 
 Do not rotate accounts for schema/tool/model `400` errors unless the account is also showing auth/quota/rate-limit symptoms.
 
@@ -576,7 +582,7 @@ Fix:
 
 ### All accounts rate-limited
 
-1. Confirm quota and rate-limit reset times.
+1. Confirm quota and rate-limit reset times — check per-model: `jq '.accounts[].cachedQuota' ~/.config/opencode/antigravity-accounts.json`
 2. Wait for the earliest reset time.
 3. Add more accounts if needed.
 4. If stale, delete accounts file and re-authenticate.
@@ -586,6 +592,7 @@ Fix:
    jq '.activeIndex = 0 | .activeIndexByFamily.gemini = 0 | .activeIndexByFamily.claude = 0' ~/.config/opencode/antigravity-accounts.json > /tmp/accounts-fix.json && mv /tmp/accounts-fix.json ~/.config/opencode/antigravity-accounts.json
    ```
    Also verify `account_selection_strategy` is set in `antigravity.json` (not null/missing). Without a strategy, the plugin defaults to `sticky` and will keep retrying the same account.
+7. **If round-robin is burning tokens on exhausted accounts** — check whether `weeklyCapExhausted` is set per-model (new behavior) vs per-group (old behavior). Old group-based tracking could mark an entire family as exhausted when only one model was affected. Update to the latest plugin version with per-model quota tracking.
 
 ### VPS Mirroring / Remote Setup (auth.json mismatch / key: dummy)
 
@@ -1154,7 +1161,7 @@ On June 18, 2026, Google is retiring the legacy Node.js-based Gemini CLI tool an
 ## Source Notes
 
 - Architecture guide: request flow, Claude handling, schema cleaning, session recovery, multi-account load balancing. [1]
-- Multi-account docs: sticky/round-robin/hybrid, dual quota pools, quota checks, account storage, PID offset. [2]
+- Multi-account docs: sticky/round-robin/hybrid, per-model quota tracking, account storage, PID offset. [2]
 - Configuration docs: advanced knobs, recommended configs, debug settings, rate-limit and quota tuning. [3]
 - Troubleshooting docs: auth reset, stale plugin/cache, Gemini CLI permission, MCP/tool schema, rate limits, OAuth callback issues. [4]
 - Package metadata: compiled `dist/`, build/test scripts, dependencies. [5]

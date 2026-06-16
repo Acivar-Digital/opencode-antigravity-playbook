@@ -6,7 +6,7 @@ import { getHealthTracker, getTokenTracker, selectHybridAccount, type AccountWit
 import { getComputeTracker } from "./compute.js";
 import { getRuntimeConfig } from "./config/index.js";
 import { generateFingerprint, updateFingerprintVersion, type Fingerprint, type FingerprintVersion, MAX_FINGERPRINT_HISTORY } from "./fingerprint.js";
-import type { QuotaGroup, QuotaGroupSummary } from "./quota.js";
+import type { ModelQuota, QuotaSummary } from "./quota.js";
 import { getModelFamily } from "./transform/model-resolver.js";
 import { debugLogToFile } from "./debug.js";
 import { formatAccountLabel } from "./logging-utils.js";
@@ -150,8 +150,8 @@ export interface ManagedAccount {
   fingerprintHistory?: FingerprintVersion[];
   /** Google user ID (from OAuth userinfo) for x-chrome-id-consistency-request */
   syncAccountId?: string;
-  /** Cached quota data from last checkAccountsQuota() call */
-  cachedQuota?: Partial<Record<QuotaGroup, QuotaGroupSummary>>;
+  /** Cached quota data from last checkAccountsQuota() call — per-model */
+  cachedQuota?: Record<string, ModelQuota>;
   cachedQuotaUpdatedAt?: number;
   verificationRequired?: boolean;
   verificationRequiredAt?: number;
@@ -241,7 +241,7 @@ function clearExpiredRateLimits(account: ManagedAccount): void {
  * @param model - Optional model string for precise resolution
  * @returns The QuotaGroup to use for soft quota checks
  */
-export function resolveQuotaGroup(family: ModelFamily, model?: string | null): QuotaGroup {
+export function resolveQuotaGroup(family: ModelFamily, model?: string | null): string {
   if (model) {
     return getModelFamily(model);
   }
@@ -257,28 +257,44 @@ function isOverSoftQuotaThreshold(
 ): boolean {
   if (thresholdPercent >= 100) return false;
   if (!account.cachedQuota) return false;
-  
   if (account.cachedQuotaUpdatedAt == null) return false;
   const age = nowMs() - account.cachedQuotaUpdatedAt;
   if (age > cacheTtlMs) return false;
-  
-  const quotaGroup = resolveQuotaGroup(family, model);
-  
-  const groupData = account.cachedQuota[quotaGroup];
-  if (groupData?.remainingFraction == null) return false;
-  
-  const remainingFraction = Math.max(0, Math.min(1, groupData.remainingFraction));
-  const usedPercent = (1 - remainingFraction) * 100;
-  const isOverThreshold = usedPercent >= thresholdPercent;
-  
-  if (isOverThreshold) {
-    const accountLabel = formatAccountLabel(account.email, account.index);
-    const resetSuffix = groupData.resetTime ? ` (resets: ${groupData.resetTime})` : "";
-    const message = `[SoftQuota] Skipping ${accountLabel}: ${quotaGroup} usage ${usedPercent.toFixed(1)}% >= threshold ${thresholdPercent}%${resetSuffix}`;
-    debugLogToFile(message);
+
+  // If we have a specific model, check that model's quota directly
+  if (model && account.cachedQuota[model]?.remainingFraction != null) {
+    const mf = account.cachedQuota[model];
+    const usedPercent = (1 - Math.max(0, Math.min(1, mf.remainingFraction ?? 0))) * 100;
+    if (usedPercent >= thresholdPercent) {
+      const accountLabel = formatAccountLabel(account.email, account.index);
+      const resetSuffix = mf.resetTime ? ` (resets: ${mf.resetTime})` : "";
+      debugLogToFile(`[SoftQuota] Skipping ${accountLabel}: ${model} usage ${usedPercent.toFixed(1)}% >= threshold ${thresholdPercent}%${resetSuffix}`);
+      return true;
+    }
+    return false;
   }
-  
-  return isOverThreshold;
+
+  // No specific model — check all models in the family, use worst
+  const quotaGroup = resolveQuotaGroup(family, model);
+  let worstRemaining: number | undefined;
+  let worstReset: string | undefined;
+  for (const [key, mq] of Object.entries(account.cachedQuota)) {
+    if (quotaGroup !== "claude" && resolveQuotaGroup(family, key) !== quotaGroup) continue;
+    if (mq.remainingFraction == null) continue;
+    if (worstRemaining === undefined || mq.remainingFraction < worstRemaining) {
+      worstRemaining = mq.remainingFraction;
+      worstReset = mq.resetTime;
+    }
+  }
+  if (worstRemaining == null) return false;
+  const usedPercent = (1 - Math.max(0, Math.min(1, worstRemaining))) * 100;
+  if (usedPercent >= thresholdPercent) {
+    const accountLabel = formatAccountLabel(account.email, account.index);
+    const resetSuffix = worstReset ? ` (resets: ${worstReset})` : "";
+    debugLogToFile(`[SoftQuota] Skipping ${accountLabel}: ${quotaGroup} usage ${usedPercent.toFixed(1)}% >= threshold ${thresholdPercent}%${resetSuffix}`);
+    return true;
+  }
+  return false;
 }
 
 export function computeSoftQuotaCacheTtlMs(
@@ -367,7 +383,7 @@ export class AccountManager {
             fingerprint: acc.fingerprint ?? generateFingerprint(acc.syncAccountId),
             fingerprintHistory: acc.fingerprintHistory ?? [],
             syncAccountId: acc.syncAccountId,
-            cachedQuota: acc.cachedQuota as Partial<Record<QuotaGroup, QuotaGroupSummary>> | undefined,
+            cachedQuota: acc.cachedQuota as Record<string, ModelQuota> | undefined,
             cachedQuotaUpdatedAt: acc.cachedQuotaUpdatedAt,
             verificationRequired: acc.verificationRequired,
             verificationRequiredAt: acc.verificationRequiredAt,
@@ -530,7 +546,7 @@ export class AccountManager {
     const quotaKey = getQuotaKey(family, headerStyle, model);
 
     if (strategy === 'round-robin') {
-      const next = this.getNextForFamily(family, model, headerStyle, softQuotaThresholdPercent, softQuotaCacheTtlMs);
+      const next = this.getNextForFamily(family, model, headerStyle);
       if (next) {
         this.markTouchedForQuota(next, quotaKey);
         this.currentAccountIndexByFamily[family] = next.index;
@@ -1168,10 +1184,10 @@ export class AccountManager {
     return [...account.fingerprintHistory];
   }
 
-  updateQuotaCache(accountIndex: number, quotaGroups: Partial<Record<QuotaGroup, QuotaGroupSummary>>): void {
+  updateQuotaCache(accountIndex: number, quotaModels: Record<string, ModelQuota>): void {
     const account = this.accounts[accountIndex];
     if (account) {
-      account.cachedQuota = quotaGroups;
+      account.cachedQuota = quotaModels;
       account.cachedQuotaUpdatedAt = nowMs();
     }
   }

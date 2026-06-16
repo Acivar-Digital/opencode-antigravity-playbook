@@ -200,8 +200,8 @@ export interface AccountMetadataV3 {
   verificationRequiredAt?: number;
   verificationRequiredReason?: string;
   verificationUrl?: string;
-  /** Cached soft quota data */
-  cachedQuota?: Record<string, { remainingFraction?: number; resetTime?: string; modelCount: number }>;
+  /** Cached soft quota data — per-model */
+  cachedQuota?: Record<string, { remainingFraction?: number; resetTime?: string; weeklyCapExhausted?: boolean }>;
   cachedQuotaUpdatedAt?: number;
   /** Local ledger for compute-based quota tracking */
   computeUsageLog?: Array<{ timestamp: number; cost: number; model: string; isReasoning: boolean }>;

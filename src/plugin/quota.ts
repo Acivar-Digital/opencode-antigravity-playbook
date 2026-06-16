@@ -7,23 +7,19 @@ import { accessTokenExpired, formatRefreshParts, parseRefreshParts } from "./aut
 import { logQuotaFetch, logQuotaStatus } from "./debug.js";
 import { ensureProjectContext } from "./project.js";
 import { refreshAccessToken } from "./token.js";
-import { getModelFamily } from "./transform/model-resolver.js";
 import type { PluginClient, OAuthAuthDetails } from "./types.js";
 import type { AccountMetadataV3 } from "./storage.js";
 
 const FETCH_TIMEOUT_MS = 10000;
 
-export type QuotaGroup = "claude" | "gemini-pro" | "gemini-flash";
-
-export interface QuotaGroupSummary {
+export interface ModelQuota {
   remainingFraction?: number;
   resetTime?: string;
-  modelCount: number;
   weeklyCapExhausted?: boolean;
 }
 
 export interface QuotaSummary {
-  groups: Partial<Record<QuotaGroup, QuotaGroupSummary>>;
+  models: Record<string, ModelQuota>;
   modelCount: number;
   error?: string;
 }
@@ -87,78 +83,37 @@ function parseResetTime(resetTime?: string): number | null {
   return timestamp;
 }
 
-function classifyQuotaGroup(modelName: string, displayName?: string): QuotaGroup | null {
-  const combined = `${modelName} ${displayName ?? ""}`.toLowerCase();
-  if (combined.includes("claude")) {
-    return "claude";
-  }
-  const isGemini3 = combined.includes("gemini-3") || combined.includes("gemini 3");
-  if (!isGemini3) {
-    return null;
-  }
-  const family = getModelFamily(modelName);
-  return family === "gemini-flash" ? "gemini-flash" : "gemini-pro";
-}
-
 function aggregateQuota(models?: Record<string, FetchAvailableModelEntry>): QuotaSummary {
-  const groups: Partial<Record<QuotaGroup, QuotaGroupSummary>> = {};
+  const modelsMap: Record<string, ModelQuota> = {};
   if (!models) {
-    return { groups, modelCount: 0 };
+    return { models: modelsMap, modelCount: 0 };
   }
 
   let totalCount = 0;
   for (const [modelName, entry] of Object.entries(models)) {
-    const group = classifyQuotaGroup(modelName, entry.displayName ?? entry.modelName);
-    if (!group) {
+    const quotaInfo = entry.quotaInfo;
+    if (!quotaInfo) {
       continue;
     }
-    const quotaInfo = entry.quotaInfo;
-    const remainingFraction = quotaInfo
-      ? normalizeRemainingFraction(quotaInfo.remainingFraction)
-      : undefined;
-    const resetTime = quotaInfo?.resetTime;
-    const resetTimestamp = parseResetTime(resetTime);
-
     totalCount += 1;
 
-    const existing = groups[group];
-    const nextCount = (existing?.modelCount ?? 0) + 1;
-    const nextRemaining =
-      remainingFraction === undefined
-        ? existing?.remainingFraction
-        : existing?.remainingFraction === undefined
-          ? remainingFraction
-          : Math.min(existing.remainingFraction, remainingFraction);
+    const remainingFraction = normalizeRemainingFraction(quotaInfo.remainingFraction);
+    const resetTime = quotaInfo.resetTime;
+    const resetTimestamp = parseResetTime(resetTime);
 
-    let nextResetTime = existing?.resetTime;
-    if (resetTimestamp !== null) {
-      if (!existing?.resetTime) {
-        nextResetTime = resetTime;
-      } else {
-        const existingTimestamp = parseResetTime(existing.resetTime);
-        if (existingTimestamp === null || resetTimestamp < existingTimestamp) {
-          nextResetTime = resetTime;
-        }
-      }
+    let weeklyCapExhausted: boolean | undefined;
+    if (resetTime && resetTimestamp !== null) {
+      weeklyCapExhausted = resetTimestamp - Date.now() > 12 * 60 * 60 * 1000;
     }
 
-    let weeklyCapExhausted = false;
-    if (nextResetTime) {
-      const ts = parseResetTime(nextResetTime);
-      if (ts !== null && (ts - Date.now() > 12 * 60 * 60 * 1000)) {
-        weeklyCapExhausted = true;
-      }
-    }
-
-    groups[group] = {
-      remainingFraction: nextRemaining,
-      resetTime: nextResetTime,
-      modelCount: nextCount,
-      weeklyCapExhausted: existing?.weeklyCapExhausted || weeklyCapExhausted,
+    modelsMap[modelName] = {
+      remainingFraction,
+      resetTime,
+      weeklyCapExhausted,
     };
   }
 
-  return { groups, modelCount: totalCount };
+  return { models: modelsMap, modelCount: totalCount };
 }
 
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = FETCH_TIMEOUT_MS): Promise<Response> {
@@ -254,14 +209,12 @@ export async function checkAccountsQuota(
       const updatedAccount = applyAccountUpdates(account, auth);
 
       let quotaResult: QuotaSummary;
-// Fetch Antigravity quota
       const antigravityResponse = await fetchAvailableModels(auth.access ?? "", projectContext.effectiveProjectId)
         .catch((error): FetchAvailableModelsResponse => ({ models: undefined }));
 
-      // Process Antigravity quota
       if (antigravityResponse.models === undefined) {
         quotaResult = {
-          groups: {},
+          models: {},
           modelCount: 0,
           error: "Failed to fetch Antigravity quota",
         };
@@ -277,11 +230,10 @@ export async function checkAccountsQuota(
         quota: quotaResult,
         updatedAccount,
       });
-      
-      // Log quota status for each family
-      for (const [family, groupQuota] of Object.entries(quotaResult.groups)) {
-        const remainingPercent = (groupQuota.remainingFraction ?? 0) * 100;
-        logQuotaStatus(account.email, index, remainingPercent, family);
+
+      for (const [modelName, modelQuota] of Object.entries(quotaResult.models)) {
+        const remainingPercent = (modelQuota.remainingFraction ?? 0) * 100;
+        logQuotaStatus(account.email, index, remainingPercent, modelName);
       }
     } catch (error) {
       results.push({

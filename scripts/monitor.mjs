@@ -163,8 +163,7 @@ async function loadProjectId(accessToken) {
 function classifyGroup(modelName) {
   const lower = modelName.toLowerCase();
   if (lower.includes("claude")) return "claude";
-  if (!lower.includes("gemini-3")) return null;
-  return lower.includes("flash") ? "gemini-flash" : "gemini-pro";
+  return "gemini";
 }
 
 async function fetchLiveQuota(account) {
@@ -190,27 +189,19 @@ async function fetchLiveQuota(account) {
   }
 
   const data = await res.json();
-  const groups = {};
+  const models = {};
   for (const [name, info] of Object.entries(data.models || {})) {
-    const g = classifyGroup(name);
-    if (!g || !info?.quotaInfo) continue;
-    const frac = info.quotaInfo.remainingFraction ?? 0;
-    const reset = info.quotaInfo.resetTime;
-    if (!groups[g]) {
-      groups[g] = { remaining: frac, resetTime: reset, count: 1 };
-    } else {
-      groups[g].remaining = Math.min(groups[g].remaining, frac);
-      groups[g].count++;
-      if (reset) {
-        const ts = Date.parse(reset);
-        const existing = Date.parse(groups[g].resetTime || "");
-        if (!Number.isFinite(existing) || ts < existing) {
-          groups[g].resetTime = reset;
-        }
-      }
-    }
+    if (!info?.quotaInfo) continue;
+    const resetTime = info.quotaInfo.resetTime;
+    const resetMs = resetTime ? Date.parse(resetTime) : NaN;
+    const weeklyCapExhausted = Number.isFinite(resetMs) && (resetMs - Date.now() > 12 * 3600_1000);
+    models[name] = {
+      remaining: info.quotaInfo.remainingFraction ?? 0,
+      resetTime,
+      weeklyCapExhausted,
+    };
   }
-  return { groups, projectId };
+  return { groups: models, projectId };
 }
 
 // ── Cached quota loader ───────────────────────────────────────────────────────
@@ -219,23 +210,34 @@ function getCachedQuota(email, quotaState) {
   if (!quotaState?.accounts?.[email]) return null;
   const entry = quotaState.accounts[email];
   const groups = {};
-  for (const model of entry.models || []) {
-    const g = model.family === "claude" ? "claude"
-      : model.family === "gemini_pro" ? "gemini-pro"
-      : model.family === "gemini_flash" ? "gemini-flash"
-      : null;
-    if (!g) continue;
-    if (!groups[g]) {
-      groups[g] = {
-        remaining: model.remainingFraction,
-        resetTime: model.resetTime,
-        count: 1,
+
+  // New format: models is a dict keyed by model name
+  if (entry.models && !Array.isArray(entry.models)) {
+    for (const [modelName, mq] of Object.entries(entry.models)) {
+      if (!mq || typeof mq.remainingFraction !== "number") continue;
+      groups[modelName] = {
+        remaining: mq.remainingFraction,
+        resetTime: mq.resetTime,
+        weeklyCapExhausted: mq.weeklyCapExhausted,
       };
-    } else {
-      groups[g].remaining = Math.min(groups[g].remaining, model.remainingFraction);
-      groups[g].count++;
     }
   }
+  // Legacy format: models is an array with family field
+  else if (Array.isArray(entry.models)) {
+    for (const model of entry.models) {
+      const g = model.family === "claude" ? "claude"
+        : model.family === "gemini_pro" ? "gemini-pro"
+        : model.family === "gemini_flash" ? "gemini-flash"
+        : model.family || model.model;
+      if (!g) continue;
+      groups[g] = {
+        remaining: model.remainingFraction ?? 0,
+        resetTime: model.resetTime,
+        weeklyCapExhausted: model.weeklyCapExhausted || false,
+      };
+    }
+  }
+
   return { groups, lastRefresh: entry.lastRefresh };
 }
 
@@ -349,37 +351,32 @@ async function renderDashboard(opts) {
         ? color(` (data: ${formatAge(quotaAge)})`, quotaAge > 6 * 3600_000 ? C.yellow : C.dim)
         : "";
 
-      const groupDefs = [
-        { key: "claude",       label: "Claude      " },
-        { key: "gemini-pro",   label: "Gemini Pro  " },
-        { key: "gemini-flash", label: "Gemini Flash" },
-      ];
+      // Per-model display — show each model's quota individually
+      const modelEntries = Object.entries(quotaGroups);
+      if (modelEntries.length === 0) {
+        console.log(`     ${color("No quota data returned", C.dim)}${ageStr}`);
+      } else {
+        for (const [modelName, g] of modelEntries) {
+          const bar = progressBar(g.remaining);
+          const resetStr = g.resetTime
+            ? (() => {
+                const ms = Date.parse(g.resetTime) - now;
+                if (ms <= 0) return color(" (resetting...)", C.dim);
+                const isWeekly = ms > 12 * 3600_000;
+                return color(` (resets in ${formatDuration(ms)}${isWeekly ? " — weekly cap" : ""})`, isWeekly ? C.yellow : C.dim);
+              })()
+            : "";
+          const weeklyFlag = g.weeklyCapExhausted ? color(" [weekly cap]", C.yellow) : "";
+          const paddedName = modelName.padEnd(32);
+          console.log(`     ${paddedName}  ${bar}${resetStr}${weeklyFlag}`);
 
-      let anyGroup = false;
-      for (const gd of groupDefs) {
-        const g = quotaGroups[gd.key];
-        if (!g) continue;
-        anyGroup = true;
-        const bar = progressBar(g.remaining);
-        const resetStr = g.resetTime
-          ? (() => {
-              const ms = Date.parse(g.resetTime) - now;
-              if (ms <= 0) return color(" (resetting...)", C.dim);
-              const isWeekly = ms > 12 * 3600_000;
-              return color(` (resets in ${formatDuration(ms)}${isWeekly ? " — weekly cap" : ""})`, isWeekly ? C.yellow : C.dim);
-            })()
-          : "";
-        console.log(`     ${gd.label}  ${bar}${resetStr}`);
-
-        // Warn if exhausted
-        if (typeof g.remaining === "number" && g.remaining <= 0) {
-          alerts.push(`${label}: ${gd.label.trim()} EXHAUSTED${resetStr}`);
+          if (typeof g.remaining === "number" && g.remaining <= 0) {
+            alerts.push(`${label}: ${modelName} EXHAUSTED${resetStr}`);
+          }
         }
-      }
-      if (!anyGroup) {
-        console.log(`     ${color("No quota groups returned", C.dim)}${ageStr}`);
-      } else if (ageStr) {
-        console.log(`     ${ageStr.trim()}`);
+        if (ageStr) {
+          console.log(`     ${ageStr.trim()}`);
+        }
       }
     }
 
