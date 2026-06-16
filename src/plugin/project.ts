@@ -245,9 +245,6 @@ export async function ensureProjectContext(auth: OAuthAuthDetails): Promise<Proj
 
   const resolveContext = async (): Promise<ProjectContextResult> => {
     const parts = parseRefreshParts(auth.refresh);
-    if (parts.managedProjectId) {
-      return { auth, effectiveProjectId: parts.managedProjectId };
-    }
 
     const fallbackProjectId = ANTIGRAVITY_DEFAULT_PROJECT_ID;
     const persistManagedProject = async (managedProjectId: string): Promise<ProjectContextResult> => {
@@ -255,7 +252,7 @@ export async function ensureProjectContext(auth: OAuthAuthDetails): Promise<Proj
         ...auth,
         refresh: formatRefreshParts({
           refreshToken: parts.refreshToken,
-          projectId: parts.projectId,
+          projectId: "",
           managedProjectId,
         }),
       };
@@ -263,8 +260,10 @@ export async function ensureProjectContext(auth: OAuthAuthDetails): Promise<Proj
       return { auth: updatedAuth, effectiveProjectId: managedProjectId };
     };
 
-    // Try to resolve a managed project from Antigravity if possible.
-    const loadPayload = await loadManagedProject(accessToken, parts.projectId ?? fallbackProjectId);
+    // Always use the developer default project for managed project resolution.
+    // User-supplied project IDs from refresh tokens are never used — they may
+    // be personal Google Cloud projects that lack the Cloud Code Assist API.
+    const loadPayload = await loadManagedProject(accessToken, fallbackProjectId);
     const resolvedManagedProjectId = extractManagedProjectId(loadPayload);
 
     if (resolvedManagedProjectId) {
@@ -272,14 +271,12 @@ export async function ensureProjectContext(auth: OAuthAuthDetails): Promise<Proj
     }
 
     // No managed project found - try to auto-provision one via onboarding.
-    // This handles accounts that were added before managed project provisioning was required.
     const tierId = getDefaultTierId(loadPayload?.allowedTiers) ?? "FREE";
-    log.debug("Auto-provisioning managed project", { tierId, projectId: parts.projectId });
-    
+    log.debug("Auto-provisioning managed project", { tierId });
+
     const provisionedProjectId = await onboardManagedProject(
       accessToken,
       tierId,
-      parts.projectId,
     );
 
     if (provisionedProjectId) {
@@ -287,15 +284,8 @@ export async function ensureProjectContext(auth: OAuthAuthDetails): Promise<Proj
       return persistManagedProject(provisionedProjectId);
     }
 
-    log.warn("Failed to provision managed project - account may not work correctly", {
-      hasProjectId: !!parts.projectId,
-    });
+    log.warn("Failed to resolve or provision managed project — using default project ID");
 
-    if (parts.projectId) {
-      return { auth, effectiveProjectId: parts.projectId };
-    }
-
-    // No project id present in auth; fall back to the hardcoded id for requests.
     return { auth, effectiveProjectId: fallbackProjectId };
   };
 
