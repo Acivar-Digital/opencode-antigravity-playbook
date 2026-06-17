@@ -276,9 +276,11 @@ export const AntigravityConfigSchema = z.object({
   max_rate_limit_wait_seconds: z.number().min(0).max(3600).default(300),
   
   /**
-   * @deprecated Kept only for backward compatibility.
-   * This flag is ignored at runtime.
-   * Gemini requests always fall back between Antigravity and Antigravity CLI quotas.
+   * Allow quota fallback between Antigravity and Antigravity CLI header styles.
+   * When enabled, if all accounts are exhausted for the preferred header style,
+   * the plugin will try the alternate header style on the same account.
+   * When disabled (default), the plugin fails immediately when all accounts
+   * are exhausted for the selected header style — no silent switching.
    *
    * @default false
    */

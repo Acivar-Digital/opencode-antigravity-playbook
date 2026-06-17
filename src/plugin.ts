@@ -1585,25 +1585,6 @@ export const createAntigravityPlugin = (providerId: string) => async (
               softQuotaCacheTtlMs,
             );
 
-            if (!account && allowQuotaFallback) {
-              const alternateHeaderStyle: HeaderStyle =
-                preferredHeaderStyle === "antigravity" ? "antigravity-cli" : "antigravity";
-              account = accountManager.getCurrentOrNextForFamily(
-                family,
-                model,
-                config.account_selection_strategy,
-                alternateHeaderStyle,
-                config.pid_offset_enabled,
-                config.soft_quota_threshold_percent,
-                softQuotaCacheTtlMs,
-              );
-              if (account) {
-                pushDebug(
-                  `selected-by-fallback idx=${account.index} preferred=${preferredHeaderStyle} alternate=${alternateHeaderStyle}`,
-                );
-              }
-            }
-            
             if (!account) {
               if (accountManager.areAllAccountsOverSoftQuota(family, config.soft_quota_threshold_percent, softQuotaCacheTtlMs, model)) {
                 const threshold = config.soft_quota_threshold_percent;
@@ -1896,55 +1877,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
             
             // Check if this header style is rate-limited for this account
             if (accountManager.isRateLimitedForHeaderStyle(account, family, headerStyle, model)) {
-              // Antigravity-first fallback: exhaust antigravity across ALL accounts before antigravity-cli
-              if (allowQuotaFallback && family === "gemini" && headerStyle === "antigravity") {
-                // Check if ANY other account has antigravity available
-                if (accountManager.hasOtherAccountWithAntigravityAvailable(account.index, family, model)) {
-                  // Switch to another account with antigravity (preserve antigravity priority)
-                  pushDebug(`antigravity rate-limited on account ${account.index}, but available on other accounts. Switching.`);
-                  shouldSwitchAccount = true;
-                } else {
-                  // All accounts exhausted antigravity - fall back to antigravity-cli on this account
-                  const alternateStyle = accountManager.getAvailableHeaderStyle(account, family, model);
-                  const fallbackStyle = resolveQuotaFallbackHeaderStyle({
-                    family,
-                    headerStyle,
-                    alternateStyle,
-                  });
-                  if (fallbackStyle) {
-                    await showToast(
-                      `Antigravity quota exhausted on all accounts. Using fallback quota.`,
-                      "warning"
-                    );
-                    headerStyle = fallbackStyle;
-                    pushDebug(`all-accounts antigravity exhausted, quota fallback: ${headerStyle}`);
-                  } else {
-                    shouldSwitchAccount = true;
-                  }
-                }
-              } else if (allowQuotaFallback && family === "gemini") {
-                // fallback style rate-limited - try alternate style (antigravity) on same account
-                const alternateStyle = accountManager.getAvailableHeaderStyle(account, family, model);
-                const fallbackStyle = resolveQuotaFallbackHeaderStyle({
-                  family,
-                  headerStyle,
-                  alternateStyle,
-                });
-                if (fallbackStyle) {
-                  const quotaName = headerStyle === "antigravity-cli" ? "Antigravity CLI" : "Antigravity";
-                  const altQuotaName = fallbackStyle === "antigravity-cli" ? "Antigravity CLI" : "Antigravity";
-                  await showToast(
-                    `${quotaName} quota exhausted, using ${altQuotaName} quota`,
-                    "warning"
-                  );
-                  headerStyle = fallbackStyle;
-                  pushDebug(`quota fallback: ${headerStyle}`);
-                } else {
-                  shouldSwitchAccount = true;
-                }
-              } else {
-                shouldSwitchAccount = true;
-              }
+              shouldSwitchAccount = true;
             }
             
             while (!shouldSwitchAccount) {
@@ -2196,50 +2129,9 @@ export const createAntigravityPlugin = (providerId: string) => async (
                         shouldSwitchAccount = true;
                         break;
                       }
-
-                      // All accounts exhausted for Antigravity on THIS model.
-                      // Before falling back to antigravity-cli, check if it's the last option (automatic fallback)
-                      if (allowQuotaFallback) {
-                        const alternateStyle = accountManager.getAvailableHeaderStyle(account, family, model);
-                        const fallbackStyle = resolveQuotaFallbackHeaderStyle({
-                          family,
-                          headerStyle,
-                          alternateStyle,
-                        });
-                        if (fallbackStyle) {
-                          const safeModelName = model || "this model";
-                          const fallbackName = "Antigravity CLI";
-                          await showToast(
-                            `Antigravity quota exhausted for ${safeModelName}. Switching to ${fallbackName} quota...`,
-                            "warning"
-                          );
-                          headerStyle = fallbackStyle;
-                          pushDebug(`quota fallback: ${headerStyle}`);
-                          continue;
-                        }
-                      }
-                    } else if (headerStyle === "antigravity-cli") {
-                      if (allowQuotaFallback) {
-                        const alternateStyle = accountManager.getAvailableHeaderStyle(account, family, model);
-                        const fallbackStyle = resolveQuotaFallbackHeaderStyle({
-                          family,
-                          headerStyle,
-                          alternateStyle,
-                        });
-                        if (fallbackStyle) {
-                          const safeModelName = model || "this model";
-                          const currentName = "Antigravity CLI";
-                          const fallbackName = fallbackStyle === "antigravity" ? "Antigravity" : "Antigravity CLI";
-                          await showToast(
-                            `${currentName} quota exhausted for ${safeModelName}. Switching to ${fallbackName} quota...`,
-                            "warning"
-                          );
-                          headerStyle = fallbackStyle;
-                          pushDebug(`quota fallback: ${headerStyle}`);
-                          continue;
-                        }
-                      }
                     }
+                    // All accounts exhausted for this header style — switch or fail
+                    shouldSwitchAccount = true;
                   }
 
                   const quotaName = headerStyle === "antigravity" ? "Antigravity" : "Antigravity CLI";
@@ -3493,7 +3385,7 @@ function resolveHeaderRoutingDecision(
     cliFirst,
     preferredHeaderStyle,
     explicitQuota,
-    allowQuotaFallback: family === "gemini",
+    allowQuotaFallback: config.quota_fallback,
   };
 }
 
