@@ -1547,12 +1547,6 @@ export const createAntigravityPlugin = (providerId: string) => async (
             }
           };
           
-          const hasOtherAccountWithAntigravity = (currentAccount: any): boolean => {
-            if (family !== "gemini") return false;
-            // Use AccountManager method which properly checks for disabled/cooling-down accounts
-            return accountManager.hasOtherAccountWithAntigravityAvailable(currentAccount.index, family, model);
-          };
-
           while (true) {
             // Check for abort at the start of each iteration
             checkAborted();
@@ -1616,15 +1610,15 @@ export const createAntigravityPlugin = (providerId: string) => async (
                 continue;
               }
 
+              // All accounts are rate-limited for the selected header style — fail immediately
               const strictWait = !allowQuotaFallback;
-              // All accounts are rate-limited - wait and retry
               const waitMs = accountManager.getMinWaitTimeForFamily(
                 family,
                 model,
                 preferredHeaderStyle,
                 strictWait,
               ) || 60_000;
-              const waitSecValue = Math.max(1, Math.ceil(waitMs / 1000));
+              const waitTimeFormatted = formatWaitTime(waitMs);
 
               pushDebug(`all-rate-limited family=${family} accounts=${accountCount} waitMs=${waitMs}`);
               if (isDebugEnabled()) {
@@ -1636,32 +1630,16 @@ export const createAntigravityPlugin = (providerId: string) => async (
                 logRateLimitSnapshot(family, accountManager.getAccountsSnapshot());
               }
 
-              // If wait time exceeds max threshold, return error immediately instead of hanging
-              // 0 means disabled (wait indefinitely)
-              const maxWaitMs = (config.max_rate_limit_wait_seconds ?? 300) * 1000;
-              if (maxWaitMs > 0 && waitMs > maxWaitMs) {
-                const waitTimeFormatted = formatWaitTime(waitMs);
-                await showToast(
-                  `Rate limited for ${waitTimeFormatted}. Try again later or add another account.`,
-                  "error"
-                );
-                
-                // Return a proper rate limit error response
-                throw new Error(
-                  `All ${accountCount} account(s) rate-limited for ${family}. ` +
-                  `Quota resets in ${waitTimeFormatted}. ` +
-                  `Add more accounts with \`opencode auth login\` or wait and retry.`
-                );
-              }
+              await showToast(
+                `All ${accountCount} account(s) rate-limited. Quota resets in ${waitTimeFormatted}.`,
+                "error",
+              );
 
-              if (!rateLimitToastShown) {
-                await showToast(`All ${accountCount} account(s) rate-limited for ${family}. Waiting ${waitSecValue}s...`, "warning");
-                rateLimitToastShown = true;
-              }
-
-              // Wait for the rate-limit cooldown to expire, then retry
-              await sleep(waitMs, abortSignal);
-              continue;
+              throw new Error(
+                `All ${accountCount} account(s) rate-limited for ${family} (${preferredHeaderStyle}). ` +
+                `Quota resets in ${waitTimeFormatted}. ` +
+                `Add more accounts with \`opencode auth login\` or wait and retry.`
+              );
             }
 
             // Account is available - reset the toast flag
@@ -2118,20 +2096,37 @@ export const createAntigravityPlugin = (providerId: string) => async (
 
                   accountManager.requestSaveToDisk();
 
-                  // For Gemini, preserve preferred quota across accounts before fallback
+                  // For Gemini, check if any other account has quota available
                   if (family === "gemini") {
-                    if (headerStyle === "antigravity") {
-                      // Check if any other account has Antigravity quota for this model
-                      if (hasOtherAccountWithAntigravity(account)) {
-                        pushDebug(`antigravity exhausted on account ${account.index}, but available on others. Switching account.`);
-                        await showToast(`Rate limited again. Switching account in 5s...`, "warning");
-                        await sleep(SWITCH_ACCOUNT_DELAY_MS, abortSignal);
-                        shouldSwitchAccount = true;
-                        break;
-                      }
+                    const hasOther = accountManager.hasOtherAccountWithAntigravityAvailable(account.index, family, model);
+                    if (!hasOther) {
+                      // All accounts exhausted for this header style — fail immediately
+                      const strictWait = !allowQuotaFallback;
+                      const waitMs = accountManager.getMinWaitTimeForFamily(
+                        family,
+                        model,
+                        headerStyle,
+                        strictWait,
+                      ) || 60_000;
+                      const waitTimeFormatted = formatWaitTime(waitMs);
+
+                      await showToast(
+                        `All ${accountCount} account(s) rate-limited. Quota resets in ${waitTimeFormatted}.`,
+                        "error",
+                      );
+
+                      throw new Error(
+                        `All ${accountCount} account(s) rate-limited for ${family} (${headerStyle}). ` +
+                        `Quota resets in ${waitTimeFormatted}. ` +
+                        `Add more accounts with \`opencode auth login\` or wait and retry.`
+                      );
                     }
-                    // All accounts exhausted for this header style — switch or fail
+                    // Other accounts available — switch to one
+                    pushDebug(`rate-limited on account ${account.index}, switching to another account`);
+                    await showToast(`Rate limited. Switching account in 5s...`, "warning");
+                    await sleep(SWITCH_ACCOUNT_DELAY_MS, abortSignal);
                     shouldSwitchAccount = true;
+                    break;
                   }
 
                   const quotaName = headerStyle === "antigravity" ? "Antigravity" : "Antigravity CLI";
