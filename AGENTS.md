@@ -191,6 +191,27 @@ This repository is configured to use local codebase indexing and semantic search
   - Console warnings complaining about `baseUrl` not ending in `/v1` were commented out (downgraded to `console.debug` mapping) to ensure a silent, clutter-free OpenCode TUI interface.
   - Details and reproduction steps are documented under `docs/implement-codebase.md`.
 
+## Repo Separation Rules (CRITICAL — SANDBOXED REPOS)
+
+There are **two separate repos** that must NEVER cross-contaminate:
+
+| Repo | Path | Git Remote | Purpose |
+|------|------|------------|---------|
+| **ocagvrotate** | `~/arthityap/ocagvrotate` | `opencode-antigravity-playbook` | Google Antigravity OAuth plugin ONLY |
+| **ocorrotate** | `~/arthityap/ocorrotate` | `opencode-openrouter-playbook` | OpenRouter + Nvidia plugins ONLY |
+
+**HARD RULES:**
+1. **NEVER copy files from `ocagvrotate` into `ocorrotate/src/`** — no `plugin.ts`, no antigravity code in ocorrotate
+2. **NEVER copy files from `ocorrotate` into `ocagvrotate/src/`** — no nvidia/openrouter code in ocagvrotate
+3. **NEVER add `ocorrotate/src/plugin.ts` to opencode.json** — it was a stale copy and has been deleted
+4. **Antigravity plugin loads from:** `file:///home/yapilwsl/arthityap/ocagvrotate/dist/index.js` (compiled, with config)
+5. **Nvidia plugin loads from:** `file:///home/yapilwsl/arthityap/ocorrotate/src/nvidia-plugin.ts`
+6. If you need to edit the antigravity plugin, edit source in `ocagvrotate/src/` then run `npm run build`
+7. If you need to edit the nvidia plugin, edit `ocorrotate/src/nvidia-plugin.ts` directly
+8. **NEVER create duplicate `.ts` files between the two `src/` directories**
+
+Violating these rules causes silent loading of stale/broken code. The user separates these repos intentionally.
+
 ## Overview
 
 OpenCode plugin for Google Antigravity OAuth. Intercepts `fetch()` calls to `generativelanguage.googleapis.com`, transforms them to Antigravity format, and handles auth, quota, recovery, and multi-account rotation.
