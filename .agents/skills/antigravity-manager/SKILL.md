@@ -102,6 +102,8 @@ The manager selects the best healthy account from the pool for each request.
 
 ## Syncing Accounts to OpenCode Rotator
 
+> **⚠️ Deprecated:** The OpenCode Google OAuth rotator (`ocagvrotate` plugin) is planned for decommission. Account rotation is now handled entirely by the `antigravity-manager` Docker container. The sync step below is only needed if you still use the legacy `google/antigravity-*` model path.
+
 When adding new accounts to `antigravity-manager`, also sync them to the OpenCode Google OAuth rotator config (`~/.config/opencode/antigravity-accounts.json`) to keep both in sync.
 Refer to the `google-oauth-accounts` skill (`.opencode/skills/google-oauth-accounts/SKILL.md`) for detailed sync instructions and integration tests.
 
@@ -121,31 +123,32 @@ Refer to the `google-oauth-accounts` skill (`.opencode/skills/google-oauth-accou
 
 ---
 
-## 5. OpenCode SDK Streaming Crash (The `__cloudCodeMeta` Error)
+## 5. OpenCode Provider Configuration
 
-### The Error
-When running OpenCode with `antigravity-manager` configured as an `openai` API provider, requests instantly crash with:
-`Error: Type validation failed: Value: {"__cloudCodeMeta":{"traceId":"req_983"}}.`
-
-### The Cause
-The local Docker container passes through proprietary Google metadata (`__cloudCodeMeta`) as the very first chunk of the stream. OpenCode uses the highly strict Vercel AI SDK, which expects standard OpenAI `choices` arrays. When it sees the Google metadata instead, it throws a type validation failure and aborts the connection.
-
-### The Fix: Universal Translation via Native Google API
-Do **not** use `api: "openai"` for this container in OpenCode. Instead, leverage the container's built-in universal translation layer by configuring it as a native `google` provider:
+### Working Configuration (OpenAI Provider)
+The `antigravity-manager` container exposes a fully OpenAI-compatible endpoint at `/v1`. Use the `@ai-sdk/openai` provider in OpenCode:
 
 ```json
 "provider": {
   "antigravity-manager": {
-    "api": "google",
+    "npm": "@ai-sdk/openai",
     "name": "Antigravity Manager",
     "options": {
-      "apiKey": "sk-antigravity",
-      "baseURL": "http://localhost:8045/v1beta"
+      "baseURL": "http://127.0.0.1:8045/v1",
+      "apiKey": "sk-antigravity"
     }
   }
 }
 ```
 
-**Why this works:** 
-1. OpenCode's native Google SDK natively understands and ignores the `__cloudCodeMeta` tracking packets without crashing.
-2. The `antigravity-manager` proxy contains a seamless translation layer: it intercepts Google-formatted API requests, translates them on the backend to Anthropic/OpenAI if necessary (e.g., when requesting `claude-sonnet-4-6`), and then translates the responses back into the Google streaming schema. This allows **all models** (not just Gemini) to work flawlessly through the native Google API!
+**Model format:** `antigravity-manager/gemini-3-flash`
+
+### Why Not `api: "google"`?
+The `api: "google"` provider with `baseURL: /v1beta` sends requests to Google's native endpoint (`/v1beta/models/{model}:streamGenerateContent`). While this works for raw curl requests, OpenCode's Google SDK (`@ai-sdk/google`) constructs URLs and headers that can conflict with the antigravity-manager's translation layer, causing `405 Method Not Allowed` errors. The OpenAI-compatible `/v1/chat/completions` path is more reliable because:
+
+1. The manager's OpenAI translation layer is battle-tested and handles all model types (Gemini, Claude, GPT)
+2. OpenCode's `@ai-sdk/openai` provider is simpler and doesn't inject Google-specific headers
+3. Account rotation, quota management, and model translation are all handled upstream in the Docker container
+
+### The `__cloudCodeMeta` Issue (Historical)
+Earlier attempts to use `api: "google"` with the native Google streaming endpoint caused crashes because the manager passed through proprietary Google metadata (`__cloudCodeMeta`) as the first SSE chunk. OpenCode's Vercel AI SDK expected standard OpenAI `choices` arrays and threw a type validation failure. The OpenAI-compatible `/v1` endpoint avoids this entirely by translating all responses to standard OpenAI format.

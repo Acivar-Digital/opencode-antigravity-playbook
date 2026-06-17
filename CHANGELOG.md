@@ -1,6 +1,13 @@
 # Changelog
 
-## [2.5.0] - 2026-06-15
+## [2.6.0] - 2026-06-18
+
+### Changed
+- **Antigravity Manager as primary provider:** OpenCode now uses the `antigravity-manager` Docker container as its primary provider via the OpenAI-compatible endpoint (`npm: "@ai-sdk/openai"`, `baseURL: http://127.0.0.1:8045/v1`). This replaces the previous `api: "google"` + `/v1beta` configuration which caused `405 Method Not Allowed` errors due to URL/header conflicts between OpenCode's Google SDK and the manager's translation layer.
+- **OpenCode rotator planned for decommission:** The `ocagvrotate` plugin's built-in account rotator is now deprecated. All account rotation, rate limit handling, and quota management is handled upstream by the `antigravity-manager` Docker container. The plugin remains in the config for backward compatibility but is no longer the primary rotation mechanism.
+
+### Fixed
+- **405 Method Not Allowed with antigravity-manager:** Resolved by switching from `api: "google"` (native Google SDK path) to `npm: "@ai-sdk/openai"` (OpenAI-compatible `/v1/chat/completions` path), which the manager fully supports and translates internally.
 
 ### Added
 - **Session Context Capture system:** Added post-commit hook (`.git/hooks/post-commit` + tracked copy `.beads/hooks/post-commit`) that auto-creates a beads checkpoint issue (priority 4) on every commit with commit metadata (hash, branch, author, files changed, diff stats).

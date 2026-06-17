@@ -112,9 +112,23 @@ opencode run "Hello" --model=google/antigravity-claude-opus-4-6-thinking --varia
 
 ## Models
 
-### Model Reference
+### Antigravity Manager Models (Recommended)
 
-**Antigravity quota** (default routing for Claude and Gemini):
+| Model | Notes |
+|-------|-------|
+| `antigravity-manager/gemini-3-flash` | Gemini 3 Flash (with thinking variants) |
+| `antigravity-manager/gemini-3.1-pro-high` | Gemini 3.1 Pro High |
+| `antigravity-manager/gemini-3.1-pro-low` | Gemini 3.1 Pro Low |
+| `antigravity-manager/gemini-2.5-flash` | Gemini 2.5 Flash |
+| `antigravity-manager/gemini-2.5-pro` | Gemini 2.5 Pro |
+| `antigravity-manager/gemini-2.5-flash-thinking` | Gemini 2.5 Flash Thinking |
+| `antigravity-manager/claude-sonnet-4-6` | Claude Sonnet 4.6 |
+| `antigravity-manager/claude-opus-4-6-thinking` | Claude Opus 4.6 Thinking |
+| `antigravity-manager/gemini-3-pro-image` | Gemini 3 Pro Image |
+
+All models go through the `antigravity-manager` container which handles account rotation automatically.
+
+### Legacy Plugin Models (Deprecated)
 
 | Model | Variants | Notes |
 |-------|----------|-------|
@@ -274,9 +288,48 @@ Add this to your `~/.config/opencode/opencode.json`:
 
 </details>
 
+> **⚠️ Rotator Deprecation Notice (June 2026):** The built-in OpenCode Google OAuth rotator (`ocagvrotate` plugin) is planned for decommission. Account rotation, rate limit handling, and quota management are now handled entirely by the [`antigravity-manager`](.agents/skills/antigravity-manager/SKILL.md) Docker container, which provides a more robust multi-account proxy with automatic failover. The plugin remains installed for backward compatibility but the `antigravity-manager` provider is the recommended path.
+
 ---
 
-## Local Codebase Indexing Setup
+## Antigravity Manager (Recommended)
+
+The `antigravity-manager` Docker container provides a fully OpenAI-compatible proxy that handles account rotation, rate limiting, and multi-account failover upstream. This is the **recommended** way to use Antigravity models in OpenCode.
+
+### Quick Setup
+
+1. **Start the manager container:**
+   ```bash
+   docker start antigravity-manager
+   ```
+
+2. **Configure OpenCode** (`~/.config/opencode/opencode.json`):
+   ```json
+   {
+     "model": "antigravity-manager/gemini-3-flash",
+     "provider": {
+       "antigravity-manager": {
+         "npm": "@ai-sdk/openai",
+         "name": "Antigravity Manager",
+         "options": {
+           "baseURL": "http://127.0.0.1:8045/v1",
+           "apiKey": "sk-antigravity"
+         }
+       }
+     }
+   }
+   ```
+
+3. **Use it:**
+   ```bash
+   opencode -m antigravity-manager/gemini-3-flash
+   ```
+
+For full setup and management instructions, see the [antigravity-manager skill](.agents/skills/antigravity-manager/SKILL.md).
+
+---
+
+## Legacy Plugin Rotator (Deprecated)
 
 The project can be configured for local semantic search and codebase indexing using `opencode-codebase-index` and the local `mcpmart` API Gateway.
 
