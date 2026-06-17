@@ -1858,6 +1858,9 @@ export const createAntigravityPlugin = (providerId: string) => async (
               shouldSwitchAccount = true;
             }
             
+            let allAccountsExhausted = false;
+            let allAccountsWaitMs = 0;
+            
             while (!shouldSwitchAccount) {
             
             // Flag to force thinking recovery on retry after API error
@@ -2102,24 +2105,15 @@ export const createAntigravityPlugin = (providerId: string) => async (
                     if (!hasOther) {
                       // All accounts exhausted for this header style — fail immediately
                       const strictWait = !allowQuotaFallback;
-                      const waitMs = accountManager.getMinWaitTimeForFamily(
+                      allAccountsWaitMs = accountManager.getMinWaitTimeForFamily(
                         family,
                         model,
                         headerStyle,
                         strictWait,
                       ) || 60_000;
-                      const waitTimeFormatted = formatWaitTime(waitMs);
-
-                      await showToast(
-                        `All ${accountCount} account(s) rate-limited. Quota resets in ${waitTimeFormatted}.`,
-                        "error",
-                      );
-
-                      throw new Error(
-                        `All ${accountCount} account(s) rate-limited for ${family} (${headerStyle}). ` +
-                        `Quota resets in ${waitTimeFormatted}. ` +
-                        `Add more accounts with \`opencode auth login\` or wait and retry.`
-                      );
+                      allAccountsExhausted = true;
+                      shouldSwitchAccount = true;
+                      break;
                     }
                     // Other accounts available — switch to one
                     pushDebug(`rate-limited on account ${account.index}, switching to another account`);
@@ -2429,6 +2423,19 @@ export const createAntigravityPlugin = (providerId: string) => async (
               }
             }
             } // end headerStyleLoop
+            
+            if (allAccountsExhausted) {
+              const waitTimeFormatted = formatWaitTime(allAccountsWaitMs);
+              await showToast(
+                `All ${accountCount} account(s) rate-limited. Quota resets in ${waitTimeFormatted}.`,
+                "error",
+              );
+              throw new Error(
+                `All ${accountCount} account(s) rate-limited for ${family} (${headerStyle}). ` +
+                `Quota resets in ${waitTimeFormatted}. ` +
+                `Add more accounts with \`opencode auth login\` or wait and retry.`
+              );
+            }
             
             if (shouldSwitchAccount) {
               // Avoid tight retry loops when there's only one account.
