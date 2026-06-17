@@ -297,13 +297,11 @@ export async function ensureProjectContext(auth: OAuthAuthDetails): Promise<Proj
       return persistManagedProject(provisionedProjectId);
     }
 
-    // Generate a synthetic project ID instead of using the hardcoded default.
-    // The default (ANTIGRAVITY_DEFAULT_PROJECT_ID) can become stale/revoked, causing
-    // 403 IAM_PERMISSION_DENIED loops that overwhelm the TUI with error responses.
-    const syntheticId = generateSyntheticProjectId();
-    log.warn("Failed to resolve or provision managed project — using synthetic project ID", { syntheticId });
+    // Use ANTIGRAVITY_DEFAULT_PROJECT_ID instead of synthetic ID.
+    // Synthetic IDs cause 403 Permission Denied because they don't exist in any GCP org.
+    log.warn("Failed to resolve or provision managed project — using ANTIGRAVITY_DEFAULT_PROJECT_ID", { ANTIGRAVITY_DEFAULT_PROJECT_ID });
 
-    return { auth, effectiveProjectId: syntheticId };
+    return { auth, effectiveProjectId: ANTIGRAVITY_DEFAULT_PROJECT_ID };
   };
 
   if (!cacheKey) {

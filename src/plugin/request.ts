@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import {
   ANTIGRAVITY_ENDPOINT,
   ANTIGRAVITY_CLI_ENDPOINT,
+  ANTIGRAVITY_DEFAULT_PROJECT_ID,
     EMPTY_SCHEMA_PLACEHOLDER_NAME,
   EMPTY_SCHEMA_PLACEHOLDER_DESCRIPTION,
   SKIP_THOUGHT_SIGNATURE,
@@ -1468,7 +1469,7 @@ export function prepareAntigravityRequest(
         stripInjectedDebugFromRequestPayload(requestPayload);
         sanitizeRequestPayloadForAntigravity(requestPayload);
 
-        const effectiveProjectId = projectId?.trim() || (headerStyle === "antigravity" ? generateSyntheticProjectId() : "");
+        const effectiveProjectId = projectId?.trim() || (headerStyle === "antigravity" ? ANTIGRAVITY_DEFAULT_PROJECT_ID : "");
         resolvedProjectId = effectiveProjectId;
 
         // Inject Antigravity system instruction with role "user" (CLIProxyAPI v6.6.89 compatibility)
