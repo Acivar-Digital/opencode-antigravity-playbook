@@ -8,6 +8,7 @@
 
 ### Fixed
 - **405 Method Not Allowed with antigravity-manager:** Resolved by switching from `api: "google"` (native Google SDK path) to `npm: "@ai-sdk/openai"` (OpenAI-compatible `/v1/chat/completions` path), which the manager fully supports and translates internally.
+- **400 Bad Request on follow-up messages:** OpenCode sends assistant messages with `"type": "output_text"` in the content array, but the antigravity-manager's Rust deserializer only handled `"text"` and `"input_text"`. Added `"output_text"` as a serde alias to the `OpenAIContentBlock::Text` variant in the manager's `models.rs`. This fixes multi-turn conversations where the first message worked but all subsequent messages failed with `Bad Request: Invalid request: data did not match any variant of untagged enum`. Patched Docker image deployed.
 
 ### Added
 - **Session Context Capture system:** Added post-commit hook (`.git/hooks/post-commit` + tracked copy `.beads/hooks/post-commit`) that auto-creates a beads checkpoint issue (priority 4) on every commit with commit metadata (hash, branch, author, files changed, diff stats).
