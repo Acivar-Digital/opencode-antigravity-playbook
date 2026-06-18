@@ -304,21 +304,22 @@ The `antigravity-manager` Docker container provides a fully OpenAI-compatible pr
    ```
 
 2. **Configure OpenCode** (`~/.config/opencode/opencode.json`):
-   ```json
-   {
-     "model": "antigravity-manager/gemini-3-flash",
-     "provider": {
-       "antigravity-manager": {
-         "npm": "@ai-sdk/openai",
-         "name": "Antigravity Manager",
-         "options": {
-           "baseURL": "http://127.0.0.1:8045/v1",
-           "apiKey": "sk-antigravity"
-         }
-       }
-     }
-   }
-   ```
+    ```json
+    {
+      "model": "antigravity-manager/gemini-3-flash",
+      "provider": {
+        "antigravity-manager": {
+          "npm": "@ai-sdk/openai-compatible",
+          "name": "Antigravity Manager",
+          "options": {
+            "baseURL": "http://127.0.0.1:8045/v1",
+            "apiKey": "sk-antigravity"
+          }
+        }
+      }
+    }
+    ```
+    > **⚠️ Must use `@ai-sdk/openai-compatible`, NOT `@ai-sdk/openai`.** The v3 OpenAI provider has a Responses API path that sends `{ type: "function_call" }` content blocks which the antigravity-manager's Rust parser doesn't recognize, causing `400 Bad Request`. Install it: `cd ~/.config/opencode && npm install @ai-sdk/openai-compatible`.
 
 3. **Use it:**
    ```bash

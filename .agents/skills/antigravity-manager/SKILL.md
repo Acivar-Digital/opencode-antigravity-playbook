@@ -109,7 +109,27 @@ Refer to the `google-oauth-accounts` skill (`.opencode/skills/google-oauth-accou
 
 ---
 
-## 4. Upstream Gemini Pro Troubleshooting Playbook
+## 4. OpenCode + Antigravity Manager Troubleshooting
+
+### 400 Bad Request: "data did not match any variant of untagged enum OpenAIContent"
+
+**Symptoms:** First message works, but follow-up messages fail with `400 Bad Request`. Multi-turn conversations break after the first assistant response.
+
+**Root Cause:** Two known sub-issues:
+
+1. **`output_text` content type (fixed in manager):** OpenCode sends assistant messages with `"type": "output_text"` in the content array. The manager's Rust `OpenAIContentBlock` enum only handled `"text"` and `"input_text"`. Fixed by adding `alias = "output_text"` to the `Text` variant in the manager's `models.rs`. Patched image: `antigravity-manager:patched`.
+
+2. **`function_call` content type (fixed by provider switch):** `@ai-sdk/openai` v3 has a **Responses API** code path that serializes assistant tool calls as `{ type: "function_call", ... }` content blocks instead of the standard Chat Completions `tool_calls` array. The manager's Rust parser doesn't recognize `function_call`. Fixed by switching the OpenCode provider from `"npm": "@ai-sdk/openai"` to `"npm": "@ai-sdk/openai-compatible"`.
+
+**Verification:** Ensure `~/.config/opencode/opencode.json` uses `@ai-sdk/openai-compatible` and the package is installed:
+```bash
+grep '"npm"' ~/.config/opencode/opencode.json | grep antigravity
+ls ~/.config/opencode/node_modules/@ai-sdk/openai-compatible/
+```
+
+---
+
+## 5. Upstream Gemini Pro Troubleshooting Playbook
 
 ### The `max_tokens` Limit Ceilings
 * **CRITICAL ceiling for Gemini Pro (`gemini-pro-agent` / `gemini-3.1-pro-high`):** Google's reasoning Pro models enforce a maximum output token limit of exactly **`65535`**. 
@@ -123,7 +143,7 @@ Refer to the `google-oauth-accounts` skill (`.opencode/skills/google-oauth-accou
 
 ---
 
-## 5. OpenCode Provider Configuration
+## 6. OpenCode Provider Configuration
 
 ### Working Configuration (OpenAI-Compatible Provider)
 The `antigravity-manager` container exposes a fully OpenAI-compatible endpoint at `/v1`. Use the `@ai-sdk/openai-compatible` provider in OpenCode:
