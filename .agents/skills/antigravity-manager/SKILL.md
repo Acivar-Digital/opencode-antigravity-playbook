@@ -187,4 +187,10 @@ Type validation failed: Value: {"__cloudCodeMeta":{"traceId":"req_105"}}
   Error message: Invalid input: expected array (choices), received undefined
 ```
 
-**Fix:** The plugin (`transformer.ts`) now filters out any SSE data line containing only `__cloudCodeMeta` (no `response` field) before forwarding to the AI SDK. Both `transformSseLine` and `transformStreamingPayload` skip these chunks.
+**Fix:** Patch `@ai-sdk/provider-utils` `parseJsonEventStream` in both CJS and ESM dist files to filter `__cloudCodeMeta` SSE chunks before zod validation. Add `if (data.includes("__cloudCodeMeta")) return;` before the `safeParseJSON` call in the `TransformStream` transform function.
+
+Files to patch:
+- `~/.config/opencode/node_modules/@ai-sdk/provider-utils/dist/index.js` (CJS, ~line 2491)
+- `~/.config/opencode/node_modules/@ai-sdk/provider-utils/dist/index.mjs` (ESM, ~line 2399)
+
+> **Note:** The plugin (`transformer.ts`) also has this filter, but it only applies to the Google OAuth path (`generativelanguage.googleapis.com`), NOT the manager path (`127.0.0.1:8045`). The SDK patch above is the correct fix for the manager path.
