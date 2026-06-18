@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.6.1] - 2026-06-19
+
+### Changed
+- **Skills overhaul — antigravity-manager and google-oauth-accounts:** Both skills rewritten to match current reality. Removed all "Crush" platform references, stale paths (`crush.json`, `~/.local/share/crush/`), old model lists, and outdated plugin internal file references. antigravity-manager skill now focuses on Docker container management and OpenCode provider config. google-oauth-accounts skill now documents current state (6 accounts, round-robin strategy, current config values). Created `docs/GRAVEYARD.md` with archived deprecated content.
+
 ## [2.6.0] - 2026-06-18
 
 ### Changed
