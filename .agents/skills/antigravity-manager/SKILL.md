@@ -125,13 +125,13 @@ Refer to the `google-oauth-accounts` skill (`.opencode/skills/google-oauth-accou
 
 ## 5. OpenCode Provider Configuration
 
-### Working Configuration (OpenAI Provider)
-The `antigravity-manager` container exposes a fully OpenAI-compatible endpoint at `/v1`. Use the `@ai-sdk/openai` provider in OpenCode:
+### Working Configuration (OpenAI-Compatible Provider)
+The `antigravity-manager` container exposes a fully OpenAI-compatible endpoint at `/v1`. Use the `@ai-sdk/openai-compatible` provider in OpenCode:
 
 ```json
 "provider": {
   "antigravity-manager": {
-    "npm": "@ai-sdk/openai",
+    "npm": "@ai-sdk/openai-compatible",
     "name": "Antigravity Manager",
     "options": {
       "baseURL": "http://127.0.0.1:8045/v1",
@@ -143,11 +143,14 @@ The `antigravity-manager` container exposes a fully OpenAI-compatible endpoint a
 
 **Model format:** `antigravity-manager/gemini-3-flash`
 
+> **⚠️ Must use `@ai-sdk/openai-compatible`, NOT `@ai-sdk/openai`.**
+> `@ai-sdk/openai` v3 has a **Responses API** code path that serializes assistant tool calls as `{ type: "function_call", ... }` content blocks instead of the standard Chat Completions `tool_calls` array. The antigravity-manager's Rust parser (`OpenAIContent` enum) doesn't recognize `function_call` as a content type, causing `400 Bad Request: data did not match any variant of untagged enum OpenAIContent`. The `@ai-sdk/openai-compatible` provider (v2.x) only uses the standard Chat Completions format.
+
 ### Why Not `api: "google"`?
 The `api: "google"` provider with `baseURL: /v1beta` sends requests to Google's native endpoint (`/v1beta/models/{model}:streamGenerateContent`). While this works for raw curl requests, OpenCode's Google SDK (`@ai-sdk/google`) constructs URLs and headers that can conflict with the antigravity-manager's translation layer, causing `405 Method Not Allowed` errors. The OpenAI-compatible `/v1/chat/completions` path is more reliable because:
 
 1. The manager's OpenAI translation layer is battle-tested and handles all model types (Gemini, Claude, GPT)
-2. OpenCode's `@ai-sdk/openai` provider is simpler and doesn't inject Google-specific headers
+2. OpenCode's `@ai-sdk/openai-compatible` provider uses standard Chat Completions format (no Responses API)
 3. Account rotation, quota management, and model translation are all handled upstream in the Docker container
 
 ### The `__cloudCodeMeta` Issue (Historical)
