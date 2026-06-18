@@ -326,6 +326,8 @@ The `antigravity-manager` Docker container provides a fully OpenAI-compatible pr
    opencode -m antigravity-manager/gemini-3-flash
    ```
 
+4. **Troubleshooting — `Type validation failed: __cloudCodeMeta`:** If you see `Type validation failed: Value: {"__cloudCodeMeta":{"traceId":"req_..."}}` errors, the antigravity-manager (v4.2.2+) injects a metadata SSE chunk as the first streaming event. The plugin filters these chunks automatically — make sure you are running the latest version of `ocagvrotate` (v2.6.0+).
+
 For full setup and management instructions, see the [antigravity-manager skill](.agents/skills/antigravity-manager/SKILL.md).
 
 ---
