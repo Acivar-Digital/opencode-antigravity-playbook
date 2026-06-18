@@ -206,9 +206,10 @@ There are **two separate repos** that must NEVER cross-contaminate:
 3. **NEVER add `ocorrotate/src/plugin.ts` to opencode.json** — it was a stale copy and has been deleted
 4. **Antigravity plugin loads from:** `file:///home/yapilwsl/arthityap/ocagvrotate/dist/index.js` (compiled, with config)
 5. **Nvidia plugin loads from:** `file:///home/yapilwsl/arthityap/ocorrotate/src/nvidia-plugin.ts`
-6. If you need to edit the antigravity plugin, edit source in `ocagvrotate/src/` then run `npm run build`
-7. If you need to edit the nvidia plugin, edit `ocorrotate/src/nvidia-plugin.ts` directly
-8. **NEVER create duplicate `.ts` files between the two `src/` directories**
+6. **`output_text` content type (fixed in manager):** OpenCode sends assistant messages with `"type": "output_text"` in the content array. The manager's Rust `OpenAIContentBlock` enum only handled `"text"` and `"input_text"`. Fixed by adding `alias = "output_text"` to the `Text` variant in the manager's `models.rs`. Patched image: `antigravity-manager:patched`.
+7. **`function_call` content type (fixed by provider switch):** `@ai-sdk/openai` v3 has a **Responses API** code path that serializes assistant tool calls as `{ type: "function_call", ... }` content blocks instead of the standard Chat Completions `tool_calls` array. The manager's Rust parser doesn't recognize `function_call`. Fixed by switching the OpenCode provider from `"npm": "@ai-sdk/openai"` to `"npm": "@ai-sdk/openai-compatible"`.
+8. **400 Bad Request: element predicate failed (Gemini 3.1):** Requests to `gemini-3.1-flash-lite` or other 3.1 models fail with `GenerateContentRequest.safety_settings[4]: element predicate failed`. Google removed `HARM_CATEGORY_CIVIC_INTEGRITY` from the supported safety categories in Gemini 3.1 APIs. The antigravity-manager previously hardcoded this in its proxy translation layer. Fixed by removing the `HARM_CATEGORY_CIVIC_INTEGRITY` entry from the Rust proxy mappers (resolved in `antigravity-manager:patched`).
+9. **NEVER create duplicate `.ts` files between the two `src/` directories**
 
 Violating these rules causes silent loading of stale/broken code. The user separates these repos intentionally.
 
