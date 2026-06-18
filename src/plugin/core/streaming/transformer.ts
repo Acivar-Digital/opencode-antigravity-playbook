@@ -42,7 +42,11 @@ export function transformStreamingPayload(
         return line;
       }
       try {
-        const parsed = JSON.parse(json) as { response?: unknown };
+        const parsed = JSON.parse(json) as { response?: unknown; __cloudCodeMeta?: unknown };
+        // Filter out __cloudCodeMeta metadata chunks injected by antigravity-manager
+        if (parsed.__cloudCodeMeta !== undefined && parsed.response === undefined) {
+          return '';
+        }
         if (parsed.response !== undefined) {
           const transformed = transformThinkingParts
             ? transformThinkingParts(parsed.response)
@@ -190,7 +194,11 @@ export function transformSseLine(
   }
 
   try {
-    const parsed = JSON.parse(json) as { response?: unknown };
+    const parsed = JSON.parse(json) as { response?: unknown; __cloudCodeMeta?: unknown };
+    // Filter out __cloudCodeMeta metadata chunks injected by antigravity-manager
+    if (parsed.__cloudCodeMeta !== undefined && parsed.response === undefined) {
+      return '';
+    }
     if (parsed.response !== undefined) {
       if (options.cacheSignatures && options.signatureSessionKey) {
         cacheThinkingSignaturesFromResponse(

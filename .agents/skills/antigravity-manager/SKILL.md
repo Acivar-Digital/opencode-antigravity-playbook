@@ -173,5 +173,18 @@ The `api: "google"` provider with `baseURL: /v1beta` sends requests to Google's 
 2. OpenCode's `@ai-sdk/openai-compatible` provider uses standard Chat Completions format (no Responses API)
 3. Account rotation, quota management, and model translation are all handled upstream in the Docker container
 
-### The `__cloudCodeMeta` Issue (Historical)
-Earlier attempts to use `api: "google"` with the native Google streaming endpoint caused crashes because the manager passed through proprietary Google metadata (`__cloudCodeMeta`) as the first SSE chunk. OpenCode's Vercel AI SDK expected standard OpenAI `choices` arrays and threw a type validation failure. The OpenAI-compatible `/v1` endpoint avoids this entirely by translating all responses to standard OpenAI format.
+### The `__cloudCodeMeta` Issue
+The antigravity-manager (v4.2.2+) injects a `__cloudCodeMeta` SSE chunk as the **first event** in every streaming response to carry the `traceId`. This chunk looks like:
+
+```
+data: {"__cloudCodeMeta":{"traceId":"req_105"}}
+```
+
+OpenCode's Vercel AI SDK (`@ai-sdk/openai-compatible`) tries to parse this chunk as an OpenAI `chat.completion.chunk`, finds neither `choices` nor `error`, and throws:
+
+```
+Type validation failed: Value: {"__cloudCodeMeta":{"traceId":"req_105"}}
+  Error message: Invalid input: expected array (choices), received undefined
+```
+
+**Fix:** The plugin (`transformer.ts`) now filters out any SSE data line containing only `__cloudCodeMeta` (no `response` field) before forwarding to the AI SDK. Both `transformSseLine` and `transformStreamingPayload` skip these chunks.
