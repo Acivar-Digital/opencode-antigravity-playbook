@@ -34,27 +34,25 @@ export const ANTIGRAVITY_REDIRECT_URI = "http://localhost:51121/oauth-callback";
 export const ANTIGRAVITY_ENDPOINT_DAILY = "https://daily-cloudcode-pa.sandbox.googleapis.com";
 export const ANTIGRAVITY_ENDPOINT_AUTOPUSH = "https://autopush-cloudcode-pa.sandbox.googleapis.com";
 export const ANTIGRAVITY_ENDPOINT_PROD = "https://cloudcode-pa.googleapis.com";
-export const ANTIGRAVITY_ENDPOINT_GOOGLE = "https://generativelanguage.googleapis.com";
 
 /**
- * Endpoint fallback order (prod → google).
- * Prod is primary since sandbox shutdown on June 18, 2026.
- * Google standard endpoint is secondary fallback.
- * Sandbox endpoints removed — they were shut down on June 18, 2026 and only cause timeouts.
+ * Endpoint fallback order (prod only).
+ * Sandbox endpoints removed — shut down on June 18, 2026.
+ * Google API endpoint removed — body wrapping is incompatible, fallback was dead code.
+ * Single endpoint: fail fast if prod goes down.
  */
 export const ANTIGRAVITY_ENDPOINT_FALLBACKS = [
   ANTIGRAVITY_ENDPOINT_PROD,
-  ANTIGRAVITY_ENDPOINT_GOOGLE,
 ] as const;
 
 /**
- * Preferred endpoint order for project discovery (prod first, then fallbacks).
+ * Preferred endpoint order for project discovery (prod only).
  * loadCodeAssist appears to be best supported on prod for managed project resolution.
  * Sandbox endpoints removed — shut down on June 18, 2026.
+ * Google API endpoint removed — body wrapping is incompatible, fallback was dead code.
  */
 export const ANTIGRAVITY_LOAD_ENDPOINTS = [
   ANTIGRAVITY_ENDPOINT_PROD,
-  ANTIGRAVITY_ENDPOINT_GOOGLE,
 ] as const;
 
 /**
