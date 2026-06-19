@@ -13,9 +13,6 @@ Welcome to the documentation for the `opencode-antigravity-auth` plugin. These d
 - **[MULTI-ACCOUNT.md](./MULTI-ACCOUNT.md)**  
   Operational guide to configuring round-robin, performance-first, or cache-first multi-account routing, handling 429/500/503 errors, and managing Google API quota limits.
 
-- **[ANTIGRAVITY_API_SPEC.md](./ANTIGRAVITY_API_SPEC.md)**  
-  Specifications for the underlying Google Antigravity Internal API schemas, including endpoints, header injection (Electron vs Go CLI styles), and payload translation.
-
 - **[MODEL-VARIANTS.md](./MODEL-VARIANTS.md)**  
   Details on model variant mappings, extended thinking mode budget tokens, and intelligent routing for Claude 3.5/3.7/4.x and Gemini 1.5/2.0/3.0/3.1 series models.
 
@@ -24,3 +21,6 @@ Welcome to the documentation for the `opencode-antigravity-auth` plugin. These d
 
 - **[RISK-AND-CHALLENGES.md](./RISK-AND-CHALLENGES.md)**  
   Important disclaimers regarding technical limitations, API reverse-engineering risks, and Terms of Service considerations.
+
+- **[GRAVEYARD.md](./GRAVEYARD.md)**  
+  Archive of removed content, failed approaches, and lessons learned. Check here before trying something that was already attempted.

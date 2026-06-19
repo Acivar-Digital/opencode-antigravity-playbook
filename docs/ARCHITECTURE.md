@@ -1,6 +1,6 @@
 # Architecture Guide
 
-**Last Updated:** April 2026
+**Last Updated:** June 19, 2026
 
 This document explains how the Antigravity plugin works: request/response flow, Claude-specific handling, and session recovery.
 
@@ -62,7 +62,7 @@ fetch() intercepted → isGenerativeLanguageRequest() → prepareAntigravityRequ
 
 - Account selection (round-robin, rate-limit aware)
 - Token refresh if expired
-- Endpoint fallback (daily → autopush → prod)
+- Single endpoint: `cloudcode-pa.googleapis.com` (prod only; sandbox shut down June 18, 2026)
 
 ### 2. Request Transformation (`request.ts`)
 

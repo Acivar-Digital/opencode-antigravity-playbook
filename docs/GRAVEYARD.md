@@ -68,3 +68,50 @@ Both skills were written during the "Crush" era and never fully updated for the 
 5. Missing critical current-state info (SDK patch, current config, current model routing)
 
 The rewritten skills focus on current reality only.
+
+---
+
+## June 19, 2026 — Post-Sandbox Shutdown Cleanup
+
+### Removed: `ANTIGRAVITY_API_SPEC.md`
+**Why removed:** Listed sandbox endpoints (`daily-cloudcode-pa.sandbox.googleapis.com`, `autopush-cloudcode-pa.sandbox.googleapis.com`) as "Active" — both were shut down on June 18, 2026. The endpoint table was dangerously misleading. The v1internal API format is still correct but the endpoint list was wrong. Key content preserved below.
+
+**What we tried:** Updating the endpoint table to mark sandbox as dead and prod as primary. But the doc is 634 lines of reverse-engineered API spec that's now stale in multiple places (auth flow, header formats, model routing). Not worth maintaining — the source code is the authoritative spec.
+
+**Key preserved content:**
+- API actions: `/v1internal:generateContent`, `/v1internal:streamGenerateContent?alt=sse`, `/v1internal:loadCodeAssist`, `/v1internal:onboardUser`
+- Request body format: `{project, model, request: {...}, userAgent, requestType, requestId}`
+- Response format: `{response: {candidates: [...]}}` wrapper (unwrapped by streaming transformer)
+- Only valid endpoint: `https://cloudcode-pa.googleapis.com`
+
+### Removed: `STREAMING-ANALYSIS.md`
+**Why removed:** One-time fix documentation for a streaming SSE wrapper bug that was resolved. The fix (unwrapping `{"response": ...}` in SSE lines) is now in `src/plugin/core/streaming/transformer.ts` and has been stable for months. No ongoing value.
+
+**What we tried:** Keeping it as reference. But it's 172 lines documenting a single bug fix — the code and tests are the reference.
+
+### Removed: `implement-codebase.md`
+**Why removed:** Documents local codebase indexing setup via `opencode-codebase-index` plugin and `mcpmart` gateway. This is infrastructure config, not plugin documentation. Belongs in `~/.config/opencode/skills/setup-codebase-indexing/SKILL.md` where it already exists.
+
+### Removed: `implement-weekly-count.md`
+**Why removed:** Implementation plan for compute-based quota tracking (June 18, 2026 compute quota model). This was a planning doc — the implementation is complete in `src/plugin/compute.ts`, `src/plugin/quota.ts`, `src/plugin/storage.ts`, `src/plugin/rotation.ts`. The plan doc is obsolete.
+
+### What We Tried & Failed: Google API Fallback
+**Attempt:** Added `generativelanguage.googleapis.com` as a secondary fallback endpoint with `/v1beta/models/{model}:{action}` URL format. The idea was that if `cloudcode-pa.googleapis.com` went down, we could fall back to the standard Gemini API.
+
+**Why it failed:** The plugin's request body is always wrapped as `{project, model, request: {...}, userAgent, requestType, requestId}` — the v1internal format. The Google API endpoint expects flat Gemini format (`{contents: [...], generationConfig: {...}}`). The URL was correct but the body was incompatible. Making it work would require a parallel body transformation path — too much complexity for a fallback that may never be needed.
+
+**Lesson:** Fallbacks that aren't end-to-end tested are dead code. If `cloudcode-pa.googleapis.com` goes down, no fallback in this plugin will help — we'd need Google to provide a new endpoint. The Antigravity Manager has the same limitation (it also only speaks v1internal).
+
+### What We Tried & Failed: Sandbox Endpoint Fallbacks
+**Attempt:** Kept `daily-cloudcode-pa.sandbox.googleapis.com` and `autopush-cloudcode-pa.sandbox.googleapis.com` in the fallback list after the June 18 shutdown, hoping they might come back or that the timeout would be harmless.
+
+**Why it failed:** Dead endpoints caused 20-40s timeouts per request. Combined with the `while(true)` retry loop in `plugin.ts`, this created an infinite retry storm — 412 POST requests in 6 minutes with zero responses. This likely triggered Google's anti-abuse detection and caused the `yapfrandb@gmail.com` Pro account loss.
+
+**Lesson:** Never keep dead endpoints in fallback lists. They don't "fail gracefully" — they cause cascading failures. Remove them immediately when confirmed dead.
+
+### What We Tried & Failed: 412 Retry Handling
+**Attempt:** Added 412 (Precondition Failed) to `shouldRetryEndpoint` so it would move to the next endpoint instead of returning a failed response.
+
+**Why it was wrong:** With a single endpoint, retrying 412 is pointless — it will just fail again. 412 should fail loudly so the user knows something is wrong. The real fix was removing the dead endpoints that caused 412 in the first place.
+
+**Lesson:** Don't add retry logic for status codes you don't understand. Fix the root cause (dead endpoints) instead of papering over symptoms (retry loops).

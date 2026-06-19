@@ -18,26 +18,23 @@ opencode auth login  # Run again to add more accounts
 
 ---
 
-## Dual Quota Pools
+## Quota Pools
 
-For Gemini models, the plugin accesses **two independent quota pools** per account:
+The plugin uses a single endpoint (`cloudcode-pa.googleapis.com`) with two header styles per account:
 
-| Quota Pool | When Used |
-|------------|-----------|
-| **Antigravity** | Default for all requests |
-| **Gemini CLI** | Automatic fallback between Antigravity and Gemini CLI in both directions |
+| Header Style | When Used |
+|-------------|-----------|
+| **Antigravity** | Default for all requests (Electron-style UA) |
+| **Antigravity CLI** | Go CLI-style UA, selected by model name suffix |
 
-This effectively **doubles your Gemini quota** through automatic fallback between Antigravity and Gemini CLI pools.
+Dual quota pool fallback between Antigravity and Gemini CLI was removed in June 2026. The sandbox endpoints that supported it were shut down on June 18, 2026. The plugin now uses a single endpoint with fail-fast behavior.
 
-### How Quota Fallback Works
+### How Account Rotation Works
 
-1. Request uses Antigravity quota on current account
+1. Request uses Antigravity header style on current account
 2. If rate-limited, plugin checks if ANY other account has Antigravity available
-3. If yes → switch to that account (stay on Antigravity)
-4. If no (all accounts exhausted) → fall back to Gemini CLI quota on current account
-5. Model names are automatically transformed (e.g., `gemini-3-flash` → `gemini-3-flash-preview`)
-
-Automatic fallback between pools is always enabled for Gemini requests.
+3. If yes → switch to that account
+4. If no (all accounts exhausted) → fail with clear error message
 
 ---
 
