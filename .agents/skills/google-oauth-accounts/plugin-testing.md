@@ -1,7 +1,4 @@
----
-name: plugin-testing
-description: Guidelines for testing and verifying changes to the opencode-antigravity-auth plugin. Use this skill whenever editing code in this repository.
----
+# Plugin Testing Guidelines
 
 You are implementing a code change or verifying issues in the `opencode-antigravity-auth` plugin. To ensure code quality, compliance, and correctness, you must read and adhere strictly to the verification procedures detailed in the "right-way" test document.
 

@@ -7,6 +7,9 @@ description: Deep operational playbook for Google OAuth account rotation, quota/
 
 Use this skill for Google OAuth account rotation, quota/rate-limit rotation, model routing, plugin configuration, diagnostics, session recovery, MCP/tool schema issues, or troubleshooting auth/session failures.
 
+> **ℹ️ For deep-dive explanations on the Antigravity quota pools vs Antigravity CLI quota pools, see the supplemental document: [google-antigravity-limits.md](./google-antigravity-limits.md).**
+> **ℹ️ For guidelines on testing and verifying changes to the plugin, see the supplemental document: [plugin-testing.md](./plugin-testing.md).**
+
 > **⚠️ Secondary path:** The primary provider is now `antigravity-manager` (Docker container, port 8045). The Google OAuth plugin path (`google/antigravity-*` models) is legacy/fallback. Account rotation is handled upstream by the manager container.
 
 ## Mental Model
