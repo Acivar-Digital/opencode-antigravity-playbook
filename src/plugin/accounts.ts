@@ -845,12 +845,6 @@ export class AccountManager {
       return false;
     }
 
-    // PATCH: skip force-enabled accounts
-    const FORCE_ENABLED = ["emilywonderme@gmail.com"];
-    if (account.email && FORCE_ENABLED.includes(account.email)) {
-      return false;
-    }
-
     account.verificationRequired = true;
     account.verificationRequiredAt = nowMs();
     account.verificationRequiredReason = reason?.trim() || undefined;

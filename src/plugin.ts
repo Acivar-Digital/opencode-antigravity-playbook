@@ -606,11 +606,6 @@ function markStoredAccountVerificationRequired(
   verifyUrl?: string,
   autoDisable = true,
 ): boolean {
-  // PATCH: skip force-enabled accounts
-  const FORCE_ENABLED = ["emilywonderme@gmail.com"];
-  if (account.email && FORCE_ENABLED.includes(account.email)) {
-    return false;
-  }
   let changed = false;
   const wasVerificationRequired = account.verificationRequired === true;
 
