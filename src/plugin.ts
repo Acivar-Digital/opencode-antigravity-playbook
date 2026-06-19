@@ -1542,11 +1542,21 @@ export const createAntigravityPlugin = (providerId: string) => async (
             }
           };
           
+          let globalAttemptCount = 0;
+
           while (true) {
+            globalAttemptCount++;
+            
             // Check for abort at the start of each iteration
             checkAborted();
             
             const accountCount = accountManager.getAccountCount();
+            const maxRetries = Math.max(5, accountCount);
+            
+            if (globalAttemptCount > maxRetries) {
+              throw new Error(`Max retry limit reached (${maxRetries} attempts). Antigravity endpoints are failing continuously. Aborting to prevent infinite loops.`);
+            }
+            
             const routingDecision = resolveHeaderRoutingDecision(urlString, family, config);
             const {
               cliFirst,

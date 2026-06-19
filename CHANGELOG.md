@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.2] - 2026-06-20
+
+### Fixed
+- **Infinite Retry Loop / Account Ban Protection:** Enforced strict network retry limits (capped at `max(5, accountCount)`) to prevent the Antigravity plugin from entering infinite `while(true)` loops during widespread rate limiting or 5xx errors. This resolves a critical issue where the plugin acted as a DoS tool and resulted in account bans (resolves `ocagvrotate-9w9`).
+- **Silent JSON Parse Failures:** Removed empty `catch (_)` blocks in the streaming transformer (`src/plugin/core/streaming/transformer.ts`). Streaming payload corruptions are now logged richly to the console for forensic investigation without crashing the stream, adhering to the fail loudly fiduciary rule.
+- **Utility Retry Limits:** Removed the `-1` (unlimited retries) capability from `logRetryAttempt` in `src/plugin/debug.ts`, strictly enforcing a minimum value of 1 to ensure no infinite loops can be accidentally introduced.
+
 ## [2.6.1] - 2026-06-19
 
 ### Changed

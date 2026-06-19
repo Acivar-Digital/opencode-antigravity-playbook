@@ -440,7 +440,7 @@ export function logToast(message: string, variant: "info" | "warning" | "success
 
 /**
  * Logs retry attempt information.
- * @param maxAttempts - Use -1 for unlimited retries
+ * Enforces strict limits: maxAttempts cannot be less than 1 (unlimited retries are forbidden).
  */
 export function logRetryAttempt(
   attempt: number,
@@ -448,10 +448,13 @@ export function logRetryAttempt(
   reason: string,
   delayMs?: number,
 ): void {
+  if (maxAttempts < 1) {
+    throw new Error("Unlimited retries are strictly forbidden by Fiduciary rules.");
+  }
+  
   runWithDebugEnabled(() => {
     const delayInfo = delayMs !== undefined ? ` delay=${delayMs}ms` : "";
-    const maxInfo = maxAttempts < 0 ? "∞" : maxAttempts.toString();
-    logDebug(`[Retry] Attempt ${attempt}/${maxInfo} reason=${reason}${delayInfo}`);
+    logDebug(`[Retry] Attempt ${attempt}/${maxAttempts} reason=${reason}${delayInfo}`);
   });
 }
 

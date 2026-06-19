@@ -53,7 +53,18 @@ export function transformStreamingPayload(
             : parsed.response;
           return `data: ${JSON.stringify(transformed)}`;
         }
-      } catch (_) {}
+      } catch (err) {
+        // Log rich forensic details so the LLM can investigate why this chunk failed to parse
+        const errorDetails = err instanceof Error ? err.stack || err.message : String(err);
+        console.error(
+          `[opencode-antigravity-auth] Streaming JSON parse error.\n` +
+          `Failed chunk preview: ${json.substring(0, 500)}\n` +
+          `Error: ${errorDetails}`
+        );
+        // We do not throw ("don't push it up the stack") to avoid crashing the stream,
+        // but we have now captured the detailed failure point.
+        return line;
+      }
       return line;
     })
     .join('\n');
