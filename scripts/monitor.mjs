@@ -194,7 +194,7 @@ async function fetchLiveQuota(account) {
     if (!info?.quotaInfo) continue;
     const resetTime = info.quotaInfo.resetTime;
     const resetMs = resetTime ? Date.parse(resetTime) : NaN;
-    const weeklyCapExhausted = Number.isFinite(resetMs) && (resetMs - Date.now() > 12 * 3600_1000);
+    const weeklyCapExhausted = Number.isFinite(resetMs) && (resetMs - Date.now() > 5 * 3600_1000);
     models[name] = {
       remaining: info.quotaInfo.remainingFraction ?? 0,
       resetTime,
@@ -351,27 +351,44 @@ async function renderDashboard(opts) {
         ? color(` (data: ${formatAge(quotaAge)})`, quotaAge > 6 * 3600_000 ? C.yellow : C.dim)
         : "";
 
-      // Per-model display — show each model's quota individually
+      // Shared Compute Aggregation
       const modelEntries = Object.entries(quotaGroups);
       if (modelEntries.length === 0) {
         console.log(`     ${color("No quota data returned", C.dim)}${ageStr}`);
       } else {
+        const groupedByQuota = new Map();
+
         for (const [modelName, g] of modelEntries) {
-          const bar = progressBar(g.remaining);
-          const resetStr = g.resetTime
+          const signature = `${g.remaining}_${g.resetTime}`;
+          if (!groupedByQuota.has(signature)) {
+            groupedByQuota.set(signature, { models: [], quota: g });
+          }
+          groupedByQuota.get(signature).models.push(modelName);
+        }
+
+        for (const [signature, group] of groupedByQuota.entries()) {
+          const modelList = group.models.length > 2 
+            ? `${group.models[0]}, ${group.models[1]} + ${group.models.length - 2} more`
+            : group.models.join(", ");
+            
+          const bar = progressBar(group.quota.remaining);
+          const title = group.models.length > 1 ? `Shared Pool (${modelList})` : modelList;
+          
+          const resetStr = group.quota.resetTime
             ? (() => {
-                const ms = Date.parse(g.resetTime) - now;
+                const ms = Date.parse(group.quota.resetTime) - now;
                 if (ms <= 0) return color(" (resetting...)", C.dim);
-                const isWeekly = ms > 12 * 3600_000;
-                return color(` (resets in ${formatDuration(ms)}${isWeekly ? " — weekly cap" : ""})`, isWeekly ? C.yellow : C.dim);
+                const isWeekly = ms > 5 * 3600_1000;
+                return color(` (resets in ${formatDuration(ms)}${isWeekly ? " — hard cap exhausted" : ""})`, isWeekly ? C.red : C.dim);
               })()
             : "";
-          const weeklyFlag = g.weeklyCapExhausted ? color(" [weekly cap]", C.yellow) : "";
-          const paddedName = modelName.padEnd(32);
+            
+          const weeklyFlag = group.quota.weeklyCapExhausted ? color(" [hard cap]", C.red) : "";
+          const paddedName = title.padEnd(45);
           console.log(`     ${paddedName}  ${bar}${resetStr}${weeklyFlag}`);
 
-          if (typeof g.remaining === "number" && g.remaining <= 0) {
-            alerts.push(`${label}: ${modelName} EXHAUSTED${resetStr}`);
+          if (typeof group.quota.remaining === "number" && group.quota.remaining <= 0) {
+            alerts.push(`${label}: ${title} EXHAUSTED${resetStr}`);
           }
         }
         if (ageStr) {

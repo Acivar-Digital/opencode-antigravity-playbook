@@ -103,7 +103,7 @@ function aggregateQuota(models?: Record<string, FetchAvailableModelEntry>): Quot
 
     let weeklyCapExhausted: boolean | undefined;
     if (resetTime && resetTimestamp !== null) {
-      weeklyCapExhausted = resetTimestamp - Date.now() > 12 * 60 * 60 * 1000;
+      weeklyCapExhausted = resetTimestamp - Date.now() > 5 * 60 * 60 * 1000;
     }
 
     modelsMap[modelName] = {

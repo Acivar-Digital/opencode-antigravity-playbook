@@ -139,10 +139,10 @@ function updateGroup(groups, group, remainingFraction, resetTime) {
     }
   }
 
-  // Weekly cap logic
+  // Hard Cap / Penalty logic (> 5 hours)
   if (entry.resetTime) {
     const ts = Date.parse(entry.resetTime);
-    if (ts - Date.now() > 12 * 60 * 60 * 1000) {
+    if (ts - Date.now() > 5 * 60 * 60 * 1000) {
       entry.weeklyCapExhausted = true;
     } else {
       entry.weeklyCapExhausted = false;
@@ -244,7 +244,7 @@ async function run() {
         const remaining = info.quotaInfo.remainingFraction ?? 0;
         const resetTime = info.quotaInfo.resetTime;
         const resetMs = resetTime ? Date.parse(resetTime) : NaN;
-        const weeklyCapExhausted = Number.isFinite(resetMs) && (resetMs - Date.now() > 12 * 60 * 60 * 1000);
+        const weeklyCapExhausted = Number.isFinite(resetMs) && (resetMs - Date.now() > 5 * 60 * 60 * 1000);
         perModel[modelName] = {
           remainingFraction: remaining,
           resetTime: resetTime || "",
@@ -252,8 +252,20 @@ async function run() {
         };
       }
 
+      const groupedByQuota = new Map();
       for (const [modelName, mq] of Object.entries(perModel)) {
-        printModelQuota(modelName, mq);
+        const signature = `${mq.remainingFraction}_${mq.resetTime}`;
+        if (!groupedByQuota.has(signature)) {
+          groupedByQuota.set(signature, { models: [], mq });
+        }
+        groupedByQuota.get(signature).models.push(modelName);
+      }
+
+      for (const [signature, group] of groupedByQuota.entries()) {
+        const title = group.models.length > 2 
+          ? `Shared Pool (${group.models[0]}, ${group.models[1]} + ${group.models.length - 2} more)`
+          : group.models.join(", ");
+        printModelQuota(title, group.mq);
       }
       
       // Update account in payload

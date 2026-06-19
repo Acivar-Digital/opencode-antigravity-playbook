@@ -42,7 +42,7 @@ function run() {
     const email = account.email || "Unknown Account";
     console.log(` - Resetting state for: ${email}`);
     
-    // Reset properties to default healthy values
+    // Reset properties to default healthy values (Transient local errors only)
     account.enabled = true;
     account.coolingDownUntil = null;
     account.cooldownReason = null;
@@ -50,8 +50,9 @@ function run() {
     account.verificationRequiredAt = null;
     account.verificationRequiredReason = null;
     account.verificationUrl = null;
-    account.rateLimitResetTimes = {};
-    account.cachedQuota = {};
+    
+    // DO NOT touch account.rateLimitResetTimes or account.cachedQuota
+    // We must respect the Fiduciary rule: if Google says they are out of compute, they are out of compute.
   }
 
   // Force active indices back to 0 to prevent index out of bounds or stuck cursors

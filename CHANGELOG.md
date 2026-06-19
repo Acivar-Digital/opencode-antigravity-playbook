@@ -2,6 +2,13 @@
 
 ## [2.6.2] - 2026-06-20
 
+### Added
+- **Shared Compute Pool Aggregation**: The `monitor` and `fetch-now` admin dashboard tools now aggregate identical Google quota responses into a single "Shared Pool" UI bar, reducing noise under the new shared compute-based usage model.
+- **Dynamic Window & Hard Cap Telemetry**: Replaced the static `> 12 hours` weekly cap logic. The admin tools now correctly classify quota resets under `<= 5 hours` as the local dynamic rolling window, and `> 5 hours` as a Hard Cap Exhausted state (resolves `ocagvrotate-4oo`).
+
+### Changed
+- **Fiduciary Safety in `admin/reset`**: `reset-accounts.mjs` no longer factory-wipes `cachedQuota` and `rateLimitResetTimes`. It preserves Google's reality and only clears local transient blockages (`enabled: false`, `coolingDownUntil`, verification blocks). This prevents accidental abuse bans caused by erasing a known 7-day hard cap and blindly retrying.
+
 ### Fixed
 - **Infinite Retry Loop / Account Ban Protection:** Enforced strict network retry limits (capped at `max(5, accountCount)`) to prevent the Antigravity plugin from entering infinite `while(true)` loops during widespread rate limiting or 5xx errors. This resolves a critical issue where the plugin acted as a DoS tool and resulted in account bans (resolves `ocagvrotate-9w9`).
 - **Silent JSON Parse Failures:** Removed empty `catch (_)` blocks in the streaming transformer (`src/plugin/core/streaming/transformer.ts`). Streaming payload corruptions are now logged richly to the console for forensic investigation without crashing the stream, adhering to the fail loudly fiduciary rule.
