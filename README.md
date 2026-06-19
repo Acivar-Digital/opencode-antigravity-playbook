@@ -280,7 +280,7 @@ Add this to your `~/.config/opencode/opencode.json`:
 
 The project can be configured for local semantic search and codebase indexing using `opencode-codebase-index` and the local `mcpmart` API Gateway.
 
-See [docs/implement-codebase.md](docs/implement-codebase.md) for full instructions, embedding models details, custom dimensions patch, and the baseUrl warning silencing procedure.
+See `~/.config/opencode/skills/setup-codebase-indexing/SKILL.md` for full instructions, embedding models details, custom dimensions patch, and the baseUrl warning silencing procedure.
 
 ---
 
