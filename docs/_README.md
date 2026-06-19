@@ -24,3 +24,6 @@ Welcome to the documentation for the `opencode-antigravity-auth` plugin. These d
 
 - **[GRAVEYARD.md](./GRAVEYARD.md)**  
   Archive of removed content, failed approaches, and lessons learned. Check here before trying something that was already attempted.
+
+- **[kiv.md](./kiv.md)**  
+  Features and design ideas for future builds — not active work. Revisit during planning.
