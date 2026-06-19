@@ -26,42 +26,48 @@ export const ANTIGRAVITY_REDIRECT_URI = "http://localhost:51121/oauth-callback";
 
 /**
  * Root endpoints for the Antigravity API (in fallback order).
- * CLIProxy and Vibeproxy use the daily sandbox endpoint first,
- * then fallback to autopush and prod if needed.
+ * The sandbox endpoints (daily-cloudcode-pa, autopush-cloudcode-pa) were shut down
+ * on June 18, 2026. The prod endpoint (cloudcode-pa.googleapis.com) is now primary.
+ * Google's standard generativelanguage.googleapis.com also works with OAuth tokens
+ * and serves as a secondary fallback.
  */
 export const ANTIGRAVITY_ENDPOINT_DAILY = "https://daily-cloudcode-pa.sandbox.googleapis.com";
 export const ANTIGRAVITY_ENDPOINT_AUTOPUSH = "https://autopush-cloudcode-pa.sandbox.googleapis.com";
 export const ANTIGRAVITY_ENDPOINT_PROD = "https://cloudcode-pa.googleapis.com";
+export const ANTIGRAVITY_ENDPOINT_GOOGLE = "https://generativelanguage.googleapis.com";
 
 /**
- * Endpoint fallback order (daily → autopush → prod).
- * Shared across request handling and project discovery to mirror CLIProxy behavior.
+ * Endpoint fallback order (prod → google).
+ * Prod is primary since sandbox shutdown on June 18, 2026.
+ * Google standard endpoint is secondary fallback.
+ * Sandbox endpoints removed — they were shut down on June 18, 2026 and only cause timeouts.
  */
 export const ANTIGRAVITY_ENDPOINT_FALLBACKS = [
-  ANTIGRAVITY_ENDPOINT_DAILY,
-  ANTIGRAVITY_ENDPOINT_AUTOPUSH,
   ANTIGRAVITY_ENDPOINT_PROD,
+  ANTIGRAVITY_ENDPOINT_GOOGLE,
 ] as const;
 
 /**
  * Preferred endpoint order for project discovery (prod first, then fallbacks).
  * loadCodeAssist appears to be best supported on prod for managed project resolution.
+ * Sandbox endpoints removed — shut down on June 18, 2026.
  */
 export const ANTIGRAVITY_LOAD_ENDPOINTS = [
   ANTIGRAVITY_ENDPOINT_PROD,
-  ANTIGRAVITY_ENDPOINT_DAILY,
-  ANTIGRAVITY_ENDPOINT_AUTOPUSH,
+  ANTIGRAVITY_ENDPOINT_GOOGLE,
 ] as const;
 
 /**
- * Primary endpoint to use (daily sandbox - same as CLIProxy/Vibeproxy).
+ * Primary endpoint to use (prod - cloudcode-pa.googleapis.com).
+ * The sandbox endpoints were shut down on June 18, 2026.
  */
-export const ANTIGRAVITY_ENDPOINT = ANTIGRAVITY_ENDPOINT_DAILY;
+export const ANTIGRAVITY_ENDPOINT = ANTIGRAVITY_ENDPOINT_PROD;
 
 /**
  * Antigravity CLI endpoint (production).
  * Used for models without :antigravity suffix.
  * Same as opencode-gemini-auth's GEMINI_CODE_ASSIST_ENDPOINT.
+ * Uses prod endpoint since sandbox shutdown on June 18, 2026.
  */
 export const ANTIGRAVITY_CLI_ENDPOINT = ANTIGRAVITY_ENDPOINT_PROD;
 

@@ -2202,6 +2202,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
                 const shouldRetryEndpoint = (
                   response.status === 403 ||
                   response.status === 404 ||
+                  response.status === 412 ||
                   response.status >= 500
                 );
 

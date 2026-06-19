@@ -821,7 +821,10 @@ export function prepareAntigravityRequest(
   const streaming = rawAction === STREAM_ACTION;
   const defaultEndpoint = headerStyle === "antigravity-cli" ? ANTIGRAVITY_CLI_ENDPOINT : ANTIGRAVITY_ENDPOINT;
   const baseEndpoint = endpointOverride ?? defaultEndpoint;
-  const transformedUrl = `${baseEndpoint}/v1internal:${rawAction}${streaming ? "?alt=sse" : ""}`;
+  const isGoogleApiEndpoint = baseEndpoint.includes("generativelanguage.googleapis.com");
+  const transformedUrl = isGoogleApiEndpoint
+    ? `${baseEndpoint}/v1beta/models/${requestedModel}:${rawAction}${streaming ? "?alt=sse" : ""}`
+    : `${baseEndpoint}/v1internal:${rawAction}${streaming ? "?alt=sse" : ""}`;
 
   const isClaude = isClaudeModel(resolved.actualModel);
   const isClaudeThinking = isClaudeThinkingModel(resolved.actualModel);
