@@ -95,6 +95,7 @@ The post-commit hook auto-creates a checkpoint issue (priority 4) with commit me
    - Patterns established or broken
 4. If working on a feature/bug issue (not a checkpoint), update that issue's `notes` instead
 5. Run `bd remember` for any cross-cutting insights worth keeping across repos
+6. **Close the checkpoint:** Run `bd close <id>` immediately so it doesn't clutter the active backlog.
 
 ### On Session End (MANDATORY)
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
@@ -120,7 +121,7 @@ The post-commit hook auto-creates a checkpoint issue (priority 4) with commit me
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
-- Checkpoint issues (priority 4) should be bulk-closed during periodic cleanup — they are breadcrumbs, not backlog
+- Checkpoint issues (priority 4) MUST be closed immediately after enriching them (e.g., `bd close <id> --reason "Checkpoint enriched"`). They are historical breadcrumbs, not open backlog.
 
 ### On Issue Resolution (MANDATORY)
 **Trigger:** The user explicitly acknowledges that an issue is resolved (e.g., "that's fixed", "it works", "good job", "thanks", "LGTM", "ship it", "done", "resolved", "perfect", "awesome", or similar affirmative confirmation).
@@ -182,15 +183,6 @@ The post-commit hook auto-creates a checkpoint issue (priority 4) with commit me
 
 Guidance for AI agents working with this repository.
 
-## Local Codebase Indexing Setup (Added June 2026)
-This repository is configured to use local codebase indexing and semantic search under OpenCode using the `opencode-codebase-index` plugin.
-- **Embeddings Provider**: Routed via `mcpmart` gateway at `http://10.32.34.243:18000/v1/openai/embeddings` using `gemini-embedding-2` (authenticated via `Authorization: Bearer localfreegemini`).
-- **MRL / Dimensions**: Matryoshka Representation Learning is leveraged by truncating to 768 dimensions (instead of 3072) for 4x smaller indexes and faster latency with minimal accuracy loss.
-- **Custom Patches Applied**:
-  - Codebase index bundle files (`index.js`/`cli.js` in CJS and ESM inside both local `node_modules` and global `~/.cache/opencode/packages/opencode-codebase-index@latest/`) were patched to correctly send the `dimensions` parameter during `/embeddings` requests.
-  - Console warnings complaining about `baseUrl` not ending in `/v1` were commented out (downgraded to `console.debug` mapping) to ensure a silent, clutter-free OpenCode TUI interface.
-  - Details and reproduction steps are documented under `docs/implement-codebase.md`.
-
 ## Repo Separation Rules (CRITICAL — SANDBOXED REPOS)
 
 There are **two separate repos** that must NEVER cross-contaminate:
@@ -206,10 +198,7 @@ There are **two separate repos** that must NEVER cross-contaminate:
 3. **NEVER add `ocorrotate/src/plugin.ts` to opencode.json** — it was a stale copy and has been deleted
 4. **Antigravity plugin loads from:** `file:///home/yapilwsl/arthityap/ocagvrotate/dist/index.js` (compiled, with config)
 5. **Nvidia plugin loads from:** `file:///home/yapilwsl/arthityap/ocorrotate/src/nvidia-plugin.ts`
-6. **`output_text` content type (fixed in manager):** OpenCode sends assistant messages with `"type": "output_text"` in the content array. The manager's Rust `OpenAIContentBlock` enum only handled `"text"` and `"input_text"`. Fixed by adding `alias = "output_text"` to the `Text` variant in the manager's `models.rs`. Patched image: `antigravity-manager:patched`.
-7. **`function_call` content type (fixed by provider switch):** `@ai-sdk/openai` v3 has a **Responses API** code path that serializes assistant tool calls as `{ type: "function_call", ... }` content blocks instead of the standard Chat Completions `tool_calls` array. The manager's Rust parser doesn't recognize `function_call`. Fixed by switching the OpenCode provider from `"npm": "@ai-sdk/openai"` to `"npm": "@ai-sdk/openai-compatible"`.
-8. **400 Bad Request: element predicate failed (Gemini 3.1):** Requests to `gemini-3.1-flash-lite` or other 3.1 models fail with `GenerateContentRequest.safety_settings[4]: element predicate failed`. Google removed `HARM_CATEGORY_CIVIC_INTEGRITY` from the supported safety categories in Gemini 3.1 APIs. The antigravity-manager previously hardcoded this in its proxy translation layer. Fixed by removing the `HARM_CATEGORY_CIVIC_INTEGRITY` entry from the Rust proxy mappers (resolved in `antigravity-manager:patched`).
-9. **NEVER create duplicate `.ts` files between the two `src/` directories**
+6. **NEVER create duplicate `.ts` files between the two `src/` directories**
 
 Violating these rules causes silent loading of stale/broken code. The user separates these repos intentionally.
 
@@ -323,7 +312,7 @@ No linter or formatter is configured. Style is enforced by convention (see below
 
 ```
 .
-├── .agents/                 # AI Agent skills (antigravity-manager, google-oauth-accounts)
+├── .agents/                 # AI Agent skills (google-oauth-accounts)
 ├── admin/                   # Administrative wrapper tools
 │   ├── check-health.mjs     # Account health checker wrapper script
 │   ├── health               # Health checker executable shell script (admin/health)
