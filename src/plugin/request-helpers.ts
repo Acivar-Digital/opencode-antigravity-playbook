@@ -2708,15 +2708,10 @@ export function matchResponseIdsToContents(
  * @returns Object with fix applied status
  */
 export function applyToolPairingFixes(
-  payload: Record<string, unknown>,
-  isClaude: boolean
+  payload: Record<string, unknown>
 ): { contentsFixed: boolean; messagesFixed: boolean } {
   let contentsFixed = false;
   let messagesFixed = false;
-
-  if (!isClaude) {
-    return { contentsFixed, messagesFixed };
-  }
 
   // Fix Gemini format (contents[])
   if (Array.isArray(payload.contents)) {

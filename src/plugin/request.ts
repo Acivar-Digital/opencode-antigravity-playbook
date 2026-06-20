@@ -897,10 +897,11 @@ export function prepareAntigravityRequest(
             if (isClaudeThinking && keepThinkingEnabled && Array.isArray((req as any).messages)) {
               (req as any).messages = ensureThinkingBeforeToolUseInMessages((req as any).messages, signatureSessionKey);
             }
-
-            // Step 3: Apply tool pairing fixes (ID assignment, response matching, orphan recovery)
-            applyToolPairingFixes(req as Record<string, unknown>, true);
           }
+
+          // Step 3: Apply tool pairing fixes (ID assignment, response matching, orphan recovery)
+          // Applied to both Claude and Gemini to ensure strict turn alternation
+          applyToolPairingFixes(req as Record<string, unknown>);
         }
 
         if (isClaudeThinking && keepThinkingEnabled && sessionId) {
@@ -1359,76 +1360,9 @@ export function prepareAntigravityRequest(
           }
         }
 
-        // For Claude models, ensure functionCall/tool use parts carry IDs (required by Anthropic).
-        // We use a two-pass approach: first collect all functionCalls and assign IDs,
-        // then match functionResponses to their corresponding calls using a FIFO queue per function name.
-        if (isClaude && Array.isArray(requestPayload.contents)) {
-          let toolCallCounter = 0;
-          // Track pending call IDs per function name as a FIFO queue
-          const pendingCallIdsByName = new Map<string, string[]>();
-
-          // First pass: assign IDs to all functionCalls and collect them
-          requestPayload.contents = requestPayload.contents.map((content: any) => {
-            if (!content || !Array.isArray(content.parts)) {
-              return content;
-            }
-
-            const newParts = content.parts.map((part: any) => {
-              if (part && typeof part === "object" && part.functionCall) {
-                const call = { ...part.functionCall };
-                if (!call.id) {
-                  call.id = `tool-call-${++toolCallCounter}`;
-                }
-                const nameKey = typeof call.name === "string" ? call.name : `tool-${toolCallCounter}`;
-                // Push to the queue for this function name
-                const queue = pendingCallIdsByName.get(nameKey) || [];
-                queue.push(call.id);
-                pendingCallIdsByName.set(nameKey, queue);
-                return { ...part, functionCall: call };
-              }
-              return part;
-            });
-
-            return { ...content, parts: newParts };
-          });
-
-          // Second pass: match functionResponses to their corresponding calls (FIFO order)
-          requestPayload.contents = (requestPayload.contents as any[]).map((content: any) => {
-            if (!content || !Array.isArray(content.parts)) {
-              return content;
-            }
-
-            const newParts = content.parts.map((part: any) => {
-              if (part && typeof part === "object" && part.functionResponse) {
-                const resp = { ...part.functionResponse };
-                if (!resp.id && typeof resp.name === "string") {
-                  const queue = pendingCallIdsByName.get(resp.name);
-                  if (queue && queue.length > 0) {
-                    // Consume the first pending ID (FIFO order)
-                    resp.id = queue.shift();
-                    pendingCallIdsByName.set(resp.name, queue);
-                  }
-                }
-                return { ...part, functionResponse: resp };
-              }
-              return part;
-            });
-
-            return { ...content, parts: newParts };
-          });
-
-          // Third pass: Apply orphan recovery for mismatched tool IDs
-          // This handles cases where context compaction or other processes
-          // create ID mismatches between calls and responses.
-          // Ported from LLM-API-Key-Proxy's _fix_tool_response_grouping()
-          requestPayload.contents = fixToolResponseGrouping(requestPayload.contents as any[]);
-        }
-
-        // Fourth pass: Fix Claude format tool pairing (defense in depth)
-        // Handles orphaned tool_use blocks in Claude's messages[] format
-        if (Array.isArray(requestPayload.messages)) {
-          requestPayload.messages = validateAndFixClaudeToolPairing(requestPayload.messages);
-        }
+        // Apply tool pairing fixes (ID assignment, response matching, orphan recovery)
+        // Required for both Anthropic (messages format) and strict Gemini 3.1+ (contents format)
+        applyToolPairingFixes(requestPayload as Record<string, unknown>);
 
         // =====================================================================
         // LAST RESORT RECOVERY: "Let it crash and start again"
