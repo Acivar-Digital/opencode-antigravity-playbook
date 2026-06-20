@@ -1,19 +1,4 @@
 import { exec } from "node:child_process";
-import { ProxyAgent } from "undici";
-
-// Hardcode proxy URL for telemetry capture session
-const proxyUrl = "http://127.0.0.1:8888";
-if (proxyUrl) {
-  const dispatcher = new ProxyAgent({
-    uri: proxyUrl,
-    requestTls: { rejectUnauthorized: true }
-  });
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    return originalFetch(input, { ...init, dispatcher } as RequestInit);
-  };
-}
-
 import { tool } from "@opencode-ai/plugin/tool";
 import {
   ANTIGRAVITY_DEFAULT_PROJECT_ID,
@@ -1558,7 +1543,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
           };
           
           let globalAttemptCount = 0;
-          let accountsRateLimitedThisRequest = 0;
+          const wafTracker = new Map<string, { count: number; firstSeen: number }>();
 
           while (true) {
             globalAttemptCount++;
@@ -2047,12 +2032,21 @@ export const createAntigravityPlugin = (providerId: string) => async (
                   // STRATEGY 2: RATE LIMIT EXCEEDED (RPM) / QUOTA EXHAUSTED / UNKNOWN
                   // Goal: Lock and Rotate (Standard Logic)
                   
-                  if (rateLimitReason !== "QUOTA_EXHAUSTED") {
-                    accountsRateLimitedThisRequest++;
-                    if (accountsRateLimitedThisRequest >= 2) {
-                      pushDebug(`WAF Circuit Breaker triggered: ${accountsRateLimitedThisRequest} accounts rate-limited instantly. Halting rotation.`);
+                  if (rateLimitReason === "RATE_LIMIT_EXCEEDED" || rateLimitReason === "UNKNOWN") {
+                    const trackerKey = currentEndpoint ?? "unknown";
+                    const now = Date.now();
+                    const existing = wafTracker.get(trackerKey);
+                    if (existing && (now - existing.firstSeen) < 30_000) {
+                      existing.count++;
+                    } else {
+                      wafTracker.set(trackerKey, { count: 1, firstSeen: now });
+                    }
+                    const wafThreshold = Math.max(2, Math.floor(accountCount * 0.25));
+                    const updated = wafTracker.get(trackerKey);
+                    if (updated && updated.count >= wafThreshold) {
+                      log.warn("waf-circuit-breaker-triggered", { endpoint: trackerKey, count: updated.count, threshold: wafThreshold });
                       throw new Error(
-                        `WAF Circuit Breaker: Multiple accounts were instantly rate-limited for this exact request. ` +
+                        `WAF Circuit Breaker: ${updated.count} accounts were instantly rate-limited on the same endpoint. ` +
                         `The payload or schema is likely triggering Google's Web Application Firewall. ` +
                         `Aborting to protect remaining accounts. Try simplifying your prompt or checking tool schemas.`
                       );

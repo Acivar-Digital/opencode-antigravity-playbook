@@ -850,6 +850,41 @@ describe("transform/gemini", () => {
       expect(result.enum).toBeUndefined();
     });
 
+    it("removes numeric enum from nested object property", () => {
+      const schema = {
+        type: "object",
+        properties: {
+          count: { type: "number", enum: [-1, 0, 1] },
+        },
+      };
+      const result = toGeminiSchema(schema) as Record<string, unknown>;
+      const props = result.properties as Record<string, Record<string, unknown>>;
+      expect(props["count"]!.type).toBe("NUMBER");
+      expect(props["count"]!.enum).toBeUndefined();
+    });
+
+    it("removes numeric enum from anyOf nested schema", () => {
+      const schema = {
+        anyOf: [
+          { type: "number", enum: [1, 2, 3] },
+          { type: "string" },
+        ],
+      };
+      const result = toGeminiSchema(schema) as Record<string, unknown>;
+      const items = result.anyOf as Array<Record<string, unknown>>;
+      expect(items[0]!.type).toBe("NUMBER");
+      expect(items[0]!.enum).toBeUndefined();
+      expect(items[1]!.type).toBe("STRING");
+    });
+
+    it("preserves string enum with no type specified", () => {
+      const schema = {
+        enum: ["auto", "on", "off"],
+      };
+      const result = toGeminiSchema(schema) as Record<string, unknown>;
+      expect(result.enum).toEqual(["auto", "on", "off"]);
+    });
+
     it("preserves required array when all properties exist", () => {
       const schema = {
         type: "object",
