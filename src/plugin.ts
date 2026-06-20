@@ -1,4 +1,19 @@
 import { exec } from "node:child_process";
+import { ProxyAgent } from "undici";
+
+// Hardcode proxy URL for telemetry capture session
+const proxyUrl = "http://127.0.0.1:8888";
+if (proxyUrl) {
+  const dispatcher = new ProxyAgent({
+    uri: proxyUrl,
+    requestTls: { rejectUnauthorized: true }
+  });
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    return originalFetch(input, { ...init, dispatcher } as RequestInit);
+  };
+}
+
 import { tool } from "@opencode-ai/plugin/tool";
 import {
   ANTIGRAVITY_DEFAULT_PROJECT_ID,
@@ -1543,6 +1558,7 @@ export const createAntigravityPlugin = (providerId: string) => async (
           };
           
           let globalAttemptCount = 0;
+          let accountsRateLimitedThisRequest = 0;
 
           while (true) {
             globalAttemptCount++;
@@ -2031,6 +2047,18 @@ export const createAntigravityPlugin = (providerId: string) => async (
                   // STRATEGY 2: RATE LIMIT EXCEEDED (RPM) / QUOTA EXHAUSTED / UNKNOWN
                   // Goal: Lock and Rotate (Standard Logic)
                   
+                  if (rateLimitReason !== "QUOTA_EXHAUSTED") {
+                    accountsRateLimitedThisRequest++;
+                    if (accountsRateLimitedThisRequest >= 2) {
+                      pushDebug(`WAF Circuit Breaker triggered: ${accountsRateLimitedThisRequest} accounts rate-limited instantly. Halting rotation.`);
+                      throw new Error(
+                        `WAF Circuit Breaker: Multiple accounts were instantly rate-limited for this exact request. ` +
+                        `The payload or schema is likely triggering Google's Web Application Firewall. ` +
+                        `Aborting to protect remaining accounts. Try simplifying your prompt or checking tool schemas.`
+                      );
+                    }
+                  }
+
                   // Only now do we call getRateLimitBackoff, which increments the global failure tracker
                   const quotaKey = headerStyleToQuotaKey(headerStyle, family);
                   const { attempt, delayMs, isDuplicate } = getRateLimitBackoff(account.index, quotaKey, serverRetryMs);
