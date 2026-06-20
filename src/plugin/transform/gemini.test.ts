@@ -820,7 +820,7 @@ describe("transform/gemini", () => {
       expect(props1["b"]!.type).toBe("NUMBER");
     });
 
-    it("preserves enum values", () => {
+    it("preserves string enum values", () => {
       const schema = {
         type: "string",
         enum: ["low", "medium", "high"],
@@ -828,6 +828,26 @@ describe("transform/gemini", () => {
       const result = toGeminiSchema(schema) as Record<string, unknown>;
       expect(result.type).toBe("STRING");
       expect(result.enum).toEqual(["low", "medium", "high"]);
+    });
+
+    it("removes numeric enum values to prevent WAF 429s (issue #8036)", () => {
+      const schema = {
+        type: "number",
+        enum: [-1, 0, 1],
+      };
+      const result = toGeminiSchema(schema) as Record<string, unknown>;
+      expect(result.type).toBe("NUMBER");
+      expect(result.enum).toBeUndefined();
+    });
+
+    it("removes boolean enum values to prevent WAF 429s", () => {
+      const schema = {
+        type: "boolean",
+        enum: [false, true],
+      };
+      const result = toGeminiSchema(schema) as Record<string, unknown>;
+      expect(result.type).toBe("BOOLEAN");
+      expect(result.enum).toBeUndefined();
     });
 
     it("preserves required array when all properties exist", () => {

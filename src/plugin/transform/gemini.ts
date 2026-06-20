@@ -89,8 +89,14 @@ export function toGeminiSchema(schema: unknown): unknown {
       // Transform union type schemas
       result[key] = value.map((item) => toGeminiSchema(item));
     } else if (key === "enum" && Array.isArray(value)) {
-      // Keep enum values as-is
-      result[key] = value;
+      // Gemini API requires TYPE_STRING for enums.
+      // If the property is not a string, sending stringified enums can trigger WAF 429s.
+      // We drop the enum constraint for non-strings. The description hint handles guidance.
+      // Fixes anomalyco/opencode#8036 and WAF 429 issues
+      const isString = typeof inputSchema.type === "string" && inputSchema.type.toLowerCase() === "string";
+      if (isString || !inputSchema.type) {
+        result[key] = value.map((item) => String(item));
+      }
     } else if (key === "default" || key === "examples") {
       // Keep default and examples as-is
       result[key] = value;
