@@ -48,7 +48,7 @@ OpenCode → antigravity-manager (127.0.0.1:8045, all models)
 
 ## Account Storage (v4)
 
-`refreshToken` must be a **bare token** — no `|projectId|managedProjectId` segments. Do NOT store top-level `projectId` or `managedProjectId`. Project resolution uses `ANTIGRAVITY_DEFAULT_PROJECT_ID` (`rising-fact-p41fc`). User-supplied project IDs from OAuth flows are personal GCP projects that lack Cloud Code Assist API and cause 403/429 cascades.
+`refreshToken` must be a **bare token** — no `|projectId|managedProjectId` segments inside the token string itself. You MUST store the top-level `projectId` provided by the user.
 
 ```json
 {

@@ -1466,6 +1466,13 @@ export function prepareAntigravityRequest(
     headers.set("Accept", "*/*");
   }
   headers.set("Accept-Language", "en-US,en;q=0.9");
+  headers.set("Accept-Encoding", "gzip, deflate, br, zstd");
+  headers.set("Connection", "keep-alive");
+  headers.set("Sec-Fetch-Dest", "empty");
+  headers.set("Sec-Fetch-Mode", "cors");
+  headers.set("Sec-Fetch-Site", "same-origin");
+  headers.set("Pragma", "no-cache");
+  headers.set("Cache-Control", "no-cache");
 
   // Add interleaved thinking header for Claude thinking models
   // This enables real-time streaming of thinking tokens

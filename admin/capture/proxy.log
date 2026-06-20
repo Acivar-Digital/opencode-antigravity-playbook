@@ -1,0 +1,14 @@
+
+======================================================
+ANTIGRAVITY MITM CAPTURE PROXY RUNNING.
+👉 Proxy Address: http://127.0.0.1:8888
+👉 Log File:      /home/yapilwsl/arthityap/ocagvrotate/admin/capture/capture.jsonl
+👉 Root CA PEM:   /home/yapilwsl/arthityap/ocagvrotate/admin/capture/certs/rootCA.pem
+======================================================
+
+Instructions:
+1. Trust the Root CA certificate in your OS / browser.
+2. Export HTTPS_PROXY=http://127.0.0.1:8888
+3. Run the Antigravity IDE or trigger requests.
+4. Press Ctrl+C to stop the proxy.
+

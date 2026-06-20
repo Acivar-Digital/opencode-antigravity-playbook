@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 
 // Import local constants to compare what the plugin currently generates
 import { getAntigravityHeaders, getRandomizedHeaders } from "../../src/constants.ts";
+import { buildFingerprintHeaders, generateFingerprint } from "../../src/plugin/fingerprint.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,9 +47,12 @@ for (const cap of captures) {
 }
 
 // Generate the headers the plugin currently produces for comparison
-const pluginDefaultHeaders = getAntigravityHeaders();
-const pluginRandomizedAntigravity = getRandomizedHeaders("antigravity");
-const pluginRandomizedCLI = getRandomizedHeaders("antigravity-cli");
+const fingerprint = generateFingerprint();
+const fingerprintHeaders = buildFingerprintHeaders(fingerprint);
+
+const pluginDefaultHeaders = { ...getAntigravityHeaders(), ...fingerprintHeaders };
+const pluginRandomizedAntigravity = { ...getRandomizedHeaders("antigravity"), ...fingerprintHeaders };
+const pluginRandomizedCLI = { ...getRandomizedHeaders("antigravity-cli"), ...fingerprintHeaders };
 
 if (jsonOutput) {
   console.log(JSON.stringify({

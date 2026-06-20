@@ -126,17 +126,17 @@ export function generateFingerprint(syncAccountId?: string): Fingerprint {
   const chromeVersion = "149";
 
   if (platform === "win32") {
-    userAgent = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Antigravity/${getAntigravityVersion()} Chrome/${chromeVersion}.0.0.0 Electron/37.3.1 Safari/537.36`;
+    userAgent = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
     chromePlatform = "Windows";
     chromeArch = arch === "arm64" ? "arm" : "x86";
     osVersion = "10.0";
   } else if (platform === "darwin") {
-    userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Antigravity/${getAntigravityVersion()} Chrome/${chromeVersion}.0.0.0 Electron/37.3.1 Safari/537.36`;
+    userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
     chromePlatform = "macOS";
     chromeArch = arch === "arm64" ? "arm" : "x86";
     osVersion = "14.5.0";
   } else {
-    userAgent = `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Antigravity/${getAntigravityVersion()} Chrome/${chromeVersion}.0.0.0 Electron/37.3.1 Safari/537.36`;
+    userAgent = `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
     chromePlatform = "Linux";
     chromeArch = arch === "arm64" ? "arm" : "x86";
     osVersion = "";
@@ -181,17 +181,17 @@ export function collectCurrentFingerprint(syncAccountId?: string): Fingerprint {
   const chromeVersion = "149";
 
   if (platform === "win32") {
-    userAgent = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Antigravity/${getAntigravityVersion()} Chrome/${chromeVersion}.0.0.0 Electron/37.3.1 Safari/537.36`;
+    userAgent = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
     chromePlatform = "Windows";
     chromeArch = arch === "arm64" ? "arm" : "x86";
     osVersion = "10.0";
   } else if (platform === "darwin") {
-    userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Antigravity/${getAntigravityVersion()} Chrome/${chromeVersion}.0.0.0 Electron/37.3.1 Safari/537.36`;
+    userAgent = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
     chromePlatform = "macOS";
     chromeArch = arch === "arm64" ? "arm" : "x86";
     osVersion = "14.5.0";
   } else {
-    userAgent = `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Antigravity/${getAntigravityVersion()} Chrome/${chromeVersion}.0.0.0 Electron/37.3.1 Safari/537.36`;
+    userAgent = `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.0.0 Safari/537.36`;
     chromePlatform = "Linux";
     chromeArch = arch === "arm64" ? "arm" : "x86";
     osVersion = "";
