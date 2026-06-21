@@ -307,6 +307,8 @@
 
 ### Added
 
+- **Antigravity Manager VPS Deployment Guide** - Added `docs/antigravity-mgr-vps.md` and `scripts/deploy-vps.sh` for zero-tier secured, centralized VPS deployment
+
 - **Quota check and account management in auth login** - Added new `--quota` and `--manage` options to the `auth login` command for checking account quota status and managing accounts directly from the CLI ([#284](https://github.com/NoeFabris/opencode-antigravity-auth/issues/284))
 
 - **Request timing jitter** - Added configurable random delay to requests to reduce detection patterns and improve rate limit resilience. Requests now include small random timing variations
